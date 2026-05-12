@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx expo *)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'Fase 1: Datos dinámicos y bugs críticos *)",
+      "Bash(npm install *)",
+      "Bash(git commit -m 'Fase 2: Integración Claude API para recetas con IA *)",
+      "Bash(git commit -m 'Fase 3: Paywall Freemium básico *)",
+      "Bash(git commit -m 'Fase 4: Configuración para build y deployment *)",
+      "Bash(mkdir -p server)",
+      "Bash(npm init *)",
+      "Bash(node --check index.js)",
+      "mcp__plugin_supabase_supabase__list_projects",
+      "mcp__plugin_supabase_supabase__list_tables",
+      "mcp__plugin_supabase_supabase__get_project_url",
+      "mcp__plugin_supabase_supabase__get_publishable_keys",
+      "mcp__plugin_supabase_supabase__execute_sql"
+    ]
+  }
+}
