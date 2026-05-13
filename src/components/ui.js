@@ -18,8 +18,7 @@ export const SHADOW = {
 
 // ─── Tab-bar-aware bottom padding ────────────────────────────
 export function useTabSafeBottom() {
-  const insets = useSafeAreaInsets();
-  return 60 + insets.bottom + 20;
+  return 100;
 }
 
 // ─── Food placeholder (gradient card) ────────────────────────

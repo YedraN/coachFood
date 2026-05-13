@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
+import { View, ActivityIndicator, Text, TouchableOpacity, Platform } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useTheme, Icon } from '../components/ui';
+import { useTheme, Icon, SHADOW } from '../components/ui';
 import { useApp } from '../context/AppContext';
 
 import AuthScreen             from '../screens/AuthScreen';
@@ -34,22 +35,14 @@ const TAB_ITEMS = [
   { name: 'Profile', label: 'Perfil',  icon: 'user' },
 ];
 
-function CustomTabBar({ state, navigation }) {
+function TabBarInner({ state, navigation }) {
   const t      = useTheme();
   const insets = useSafeAreaInsets();
 
   return (
     <View style={{
-      flexDirection: 'row',
-      backgroundColor: t.surface,
-      borderTopWidth: 1,
-      borderTopColor: t.border,
-      paddingBottom: insets.bottom,
-      shadowColor: '#000',
-      shadowOffset: { y: -2 },
-      shadowOpacity: 0.05,
-      shadowRadius: 8,
-      elevation: 5,
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly',
+      height: 64, paddingHorizontal: 6,
     }}>
       {TAB_ITEMS.map((tab, index) => {
         const isFocused = state.index === index;
@@ -58,31 +51,67 @@ function CustomTabBar({ state, navigation }) {
             key={tab.name}
             onPress={() => { if (!isFocused) navigation.navigate(tab.name); }}
             activeOpacity={0.7}
-            style={{ flex: 1, height: 60, alignItems: 'center', justifyContent: 'center', gap: 2 }}
+            style={{
+              flex: 1, height: 52, alignItems: 'center', justifyContent: 'center', gap: 2,
+            }}
           >
             <View style={{
-              width: 36, height: 36, borderRadius: 999,
-              backgroundColor: isFocused ? t.accentSoft : 'transparent',
+              width: isFocused ? 44 : 36, height: isFocused ? 44 : 36, borderRadius: 999,
+              backgroundColor: isFocused ? t.accent : t.chipBg,
               alignItems: 'center', justifyContent: 'center',
+              ...(isFocused ? {} : {}),
             }}>
               <Icon
                 name={tab.icon}
-                size={20}
-                color={isFocused ? t.accent : t.muted}
-                strokeWidth={isFocused ? 2 : 1.6}
+                size={isFocused ? 22 : 20}
+                color={isFocused ? '#fff' : t.muted}
+                strokeWidth={isFocused ? 2.2 : 1.6}
               />
             </View>
-            <Text allowFontScaling={false} style={{
-              fontSize: 9,
-              fontWeight: isFocused ? '600' : '500',
-              color: isFocused ? t.accent : t.muted,
-              letterSpacing: 0.2,
-            }}>
-              {tab.label}
-            </Text>
+            {isFocused && (
+              <View style={{ width: 4, height: 4, borderRadius: 999, backgroundColor: t.accent }} />
+            )}
           </TouchableOpacity>
         );
       })}
+    </View>
+  );
+}
+
+function CustomTabBar({ state, navigation }) {
+  const t      = useTheme();
+  const insets = useSafeAreaInsets();
+  const tabHeight = 80;
+
+  return (
+    <View style={{
+      height: tabHeight + insets.bottom,
+      backgroundColor: 'transparent',
+      position: 'absolute',
+      bottom: 0, left: 0, right: 0,
+      justifyContent: 'flex-end',
+      paddingBottom: Platform.OS === 'ios' ? insets.bottom : Math.max(insets.bottom, 12),
+      pointerEvents: 'box-none',
+    }}>
+      {/* Glass container */}
+      <View style={{
+        marginHorizontal: 16, borderRadius: 36, overflow: 'hidden',
+        ...SHADOW.lg,
+      }}>
+        {Platform.OS === 'ios' ? (
+          <BlurView intensity={85} tint={t.isDark ? 'dark' : 'light'}
+            style={{ borderRadius: 36, overflow: 'hidden' }}>
+            <TabBarInner state={state} navigation={navigation} />
+          </BlurView>
+        ) : (
+          <View style={{
+            backgroundColor: t.surface + 'F0', borderRadius: 36,
+            borderWidth: 1, borderColor: t.border + '80',
+          }}>
+            <TabBarInner state={state} navigation={navigation} />
+          </View>
+        )}
+      </View>
     </View>
   );
 }
