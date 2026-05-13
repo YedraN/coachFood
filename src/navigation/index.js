@@ -21,6 +21,7 @@ import WorkoutScreen          from '../screens/WorkoutScreen';
 import ExerciseScreen         from '../screens/ExerciseScreen';
 import ProfileScreen          from '../screens/ProfileScreen';
 import PrsScreen              from '../screens/PrsScreen';
+import ComingSoonScreen       from '../screens/ComingSoonScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab   = createBottomTabNavigator();
@@ -118,6 +119,7 @@ export default function AppNavigator() {
             <Stack.Screen name="Exercise"           component={ExerciseScreen} />
             <Stack.Screen name="WorkoutSurvey"      component={WorkoutSurveyScreen} />
             <Stack.Screen name="Prs"                component={PrsScreen} />
+            <Stack.Screen name="ComingSoon"         component={ComingSoonScreen} />
           </>
         )}
       </Stack.Navigator>

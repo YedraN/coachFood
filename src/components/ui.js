@@ -9,6 +9,13 @@ import { MONO } from '../constants/fonts';
 export const ThemeCtx = React.createContext(null);
 export const useTheme = () => React.useContext(ThemeCtx);
 
+// ─── Shadow helper (cross-platform) ──────────────────────────
+export const SHADOW = {
+  sm:   { shadowColor: '#000', shadowOffset: { y: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
+  md:   { shadowColor: '#000', shadowOffset: { y: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3 },
+  lg:   { shadowColor: '#000', shadowOffset: { y: 4 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 5 },
+};
+
 // ─── Tab-bar-aware bottom padding ────────────────────────────
 export function useTabSafeBottom() {
   const insets = useSafeAreaInsets();
@@ -79,6 +86,7 @@ export function Card({ children, style, onPress, padded = true }) {
       borderRadius: 20,
       padding: padded ? 18 : 0,
       overflow: 'hidden',
+      ...SHADOW.md,
     }, style]}>
       {children}
     </View>
@@ -88,14 +96,16 @@ export function Card({ children, style, onPress, padded = true }) {
 }
 
 // ─── Buttons ──────────────────────────────────────────────────
-export function PrimaryButton({ children, onPress, icon }) {
+export function PrimaryButton({ children, onPress, icon, style, disabled }) {
   const t = useTheme();
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={{
-      height: 52, backgroundColor: t.accent,
-      borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-      flexDirection: 'row', gap: 8,
-    }}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.85} disabled={disabled}
+      style={[{
+        height: 52, backgroundColor: disabled ? t.muted : t.accent,
+        borderRadius: 999, alignItems: 'center', justifyContent: 'center',
+        flexDirection: 'row', gap: 8,
+        ...SHADOW.sm,
+      }, style]}>
       {icon && <Icon name={icon} size={18} color="#fffdf7" strokeWidth={2} />}
       <Text style={{ color: '#fffdf7', fontSize: 15, fontWeight: '600', letterSpacing: -0.1 }}>
         {children}
