@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { generateRecipes } from '../services/ai';
+
+const ONBOARDING_KEY = '@coachfood/onboarded';
 
 export function calcTargets({ weight, height, age, sex, activity, goal }) {
   const mult = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725 }[activity] ?? 1.55;
@@ -112,7 +115,11 @@ export function AppProvider({ children }) {
     loadingRef.current = true;
     try {
       const profile = await fetchProfile(userId);
-      if (!profile) { setReady(true); loadingRef.current = false; return; }
+      if (!profile) {
+        const cached = await AsyncStorage.getItem(ONBOARDING_KEY);
+        if (cached === 'true') { setOnboarding(true); }
+        setReady(true); loadingRef.current = false; return;
+      }
 
       setOnboarding(profile.onboarding_done);
       if (!profile.onboarding_done) { setReady(true); loadingRef.current = false; return; }
@@ -226,17 +233,17 @@ export function AppProvider({ children }) {
       streak:         1,
     };
 
-    const { error } = await supabase.from('profiles').update(profileData).eq('id', userId);
+    const { data: upd, error } = await supabase.from('profiles').update(profileData).eq('id', userId).select();
     if (error) {
       console.error('Onboarding save error:', error);
-      throw new Error('No se pudieron guardar tus datos. Intenta de nuevo.');
+      throw new Error('Error de base de datos: ' + error.message + ' (código: ' + error.code + ')');
     }
-    const { data: verify } = await supabase.from('profiles').select('onboarding_done').eq('id', userId).single();
-    if (!verify?.onboarding_done) {
-      throw new Error('Error al guardar el progreso. Intenta de nuevo.');
+    if (!upd || upd.length === 0) {
+      throw new Error('No se encontró tu perfil. Cierra sesión y vuelve a entrar.');
     }
     setUser(mapProfile({ ...profileData, water_target: 8, steps_target: 10000, is_premium: false, premium_expires_at: null }));
     setOnboarding(true);
+    AsyncStorage.setItem(ONBOARDING_KEY, 'true').catch(() => {});
   };
 
   // ── User profile ─────────────────────────────────────────────
