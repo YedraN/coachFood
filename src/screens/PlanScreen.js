@@ -28,14 +28,30 @@ export default function PlanScreen({ navigation }) {
   const mealTimes = { Desayuno: '08:00', Comida: '14:00', Snack: '17:30', Cena: '21:00' };
 
   const getWeekDates = () => {
-    const curr = new Date();
-    const first = curr.getDate() - curr.getDay() + 1; // First day is Sunday
-    const mon = new Date(curr.setDate(first + 1)); // Monday
-    const sun = new Date(curr.setDate(first + 7)); // Sunday
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const mon = new Date(now);
+    mon.setDate(now.getDate() + diffToMonday);
+    const sun = new Date(mon);
+    sun.setDate(mon.getDate() + 6);
     const fmtDate = (d) => d.getDate();
     const fmtMonth = (d) => ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][d.getMonth()];
     return `${fmtDate(mon)}–${fmtDate(sun)} ${fmtMonth(sun)}`;
   };
+
+  const weekDates = (() => {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const mon = new Date(now);
+    mon.setDate(now.getDate() + diffToMonday);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(mon);
+      d.setDate(mon.getDate() + i);
+      return d.getDate();
+    });
+  })();
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }}>
@@ -60,7 +76,7 @@ export default function PlanScreen({ navigation }) {
               <Text style={{ fontFamily: MONO, fontSize: 9, letterSpacing: 1, color: day === i ? t.bg : t.muted }}>
                 {d.toUpperCase()}
               </Text>
-              <Text style={{ fontSize: 22, color: day === i ? t.bg : t.fg, marginTop: 2 }}>{10 + i}</Text>
+              <Text style={{ fontSize: 22, color: day === i ? t.bg : t.fg, marginTop: 2 }}>{weekDates[i]}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>

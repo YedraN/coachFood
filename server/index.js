@@ -2,6 +2,7 @@ import express from 'express';
 import OpenAI from 'openai';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import ws from 'ws';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
@@ -20,7 +21,9 @@ const PORT = process.env.PORT || 3000;
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+  realtime: { transport: ws },
+});
 
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')

@@ -49,7 +49,8 @@ export default function HomeScreen({ navigation }) {
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [newWeight, setNewWeight]             = useState(u.weight);
   const lostKg     = Math.max(0, u.weightStart - u.weight).toFixed(1);
-  const progressPct = Math.min(1, (u.weightStart - u.weight) / Math.max(0.1, u.weightStart - u.weightTarget));
+  const totalToLose = u.weightStart - u.weightTarget;
+  const progressPct = totalToLose > 0 ? Math.min(1, Math.max(0, (u.weightStart - u.weight) / totalToLose)) : 0;
 
   const now = new Date();
   const dayName = DAYS[(now.getDay() + 6) % 7];

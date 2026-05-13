@@ -12,10 +12,11 @@ import { MONO } from '../constants/fonts';
 export default function RecipeDetailScreen({ navigation, route }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const { toggleMealDone, daily } = useApp();
+  const { toggleMealDone, daily, aiRecipes } = useApp();
   const id = route.params?.id;
   const mealId = route.params?.mealId;
-  const r = RECIPES.find(x => x.id === id) || RECIPES[0];
+  const allRecipes = [...aiRecipes, ...RECIPES];
+  const r = allRecipes.find(x => x.id === id) || allRecipes[0];
   const [tab, setTab] = useState('ingredients');
   const [checked, setChecked] = useState(new Set());
 
