@@ -5,7 +5,6 @@ import {
   useTheme, FoodPlaceholder, IconButton, Eyebrow, H1, MacroBar,
   PrimaryButton, Icon,
 } from '../components/ui';
-import { RECIPES } from '../constants/data';
 import { useApp } from '../context/AppContext';
 import { MONO } from '../constants/fonts';
 
@@ -15,8 +14,7 @@ export default function RecipeDetailScreen({ navigation, route }) {
   const { toggleMealDone, daily, aiRecipes } = useApp();
   const id = route.params?.id;
   const mealId = route.params?.mealId;
-  const allRecipes = [...aiRecipes, ...RECIPES];
-  const r = allRecipes.find(x => x.id === id) || allRecipes[0];
+  const r = aiRecipes.find(x => x.id === id) || aiRecipes[0];
   const [tab, setTab] = useState('ingredients');
   const [checked, setChecked] = useState(new Set());
 

@@ -8,17 +8,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, Icon } from '../components/ui';
 import { useApp } from '../context/AppContext';
 
-import AuthScreen        from '../screens/AuthScreen';
-import OnboardingScreen  from '../screens/OnboardingScreen';
-import HomeScreen        from '../screens/HomeScreen';
-import ScanScreen        from '../screens/ScanScreen';
-import PantryScreen      from '../screens/PantryScreen';
-import RecipesScreen     from '../screens/RecipesScreen';
-import RecipeDetailScreen from '../screens/RecipeDetailScreen';
-import PlanScreen        from '../screens/PlanScreen';
-import WorkoutScreen     from '../screens/WorkoutScreen';
-import ExerciseScreen    from '../screens/ExerciseScreen';
-import ProfileScreen     from '../screens/ProfileScreen';
+import AuthScreen             from '../screens/AuthScreen';
+import OnboardingScreen       from '../screens/OnboardingScreen';
+import WorkoutSurveyScreen    from '../screens/WorkoutSurveyScreen';
+import HomeScreen             from '../screens/HomeScreen';
+import ScanScreen             from '../screens/ScanScreen';
+import PantryScreen           from '../screens/PantryScreen';
+import RecipesScreen          from '../screens/RecipesScreen';
+import RecipeDetailScreen     from '../screens/RecipeDetailScreen';
+import PlanScreen             from '../screens/PlanScreen';
+import WorkoutScreen          from '../screens/WorkoutScreen';
+import ExerciseScreen         from '../screens/ExerciseScreen';
+import ProfileScreen          from '../screens/ProfileScreen';
+import PrsScreen              from '../screens/PrsScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab   = createBottomTabNavigator();
@@ -89,7 +91,7 @@ function HomeTabs() {
 }
 
 export default function AppNavigator() {
-  const { ready, session, onboardingDone } = useApp();
+  const { ready, session, onboardingDone, user } = useApp();
   const t = useTheme();
 
   if (!ready) {
@@ -109,11 +111,13 @@ export default function AppNavigator() {
           <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         ) : (
           <>
-            <Stack.Screen name="Main"         component={HomeTabs} />
-            <Stack.Screen name="Scan"         component={ScanScreen} />
-            <Stack.Screen name="Pantry"       component={PantryScreen} />
-            <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} />
-            <Stack.Screen name="Exercise"     component={ExerciseScreen} />
+            <Stack.Screen name="Main"               component={HomeTabs} />
+            <Stack.Screen name="Scan"               component={ScanScreen} />
+            <Stack.Screen name="Pantry"             component={PantryScreen} />
+            <Stack.Screen name="RecipeDetail"       component={RecipeDetailScreen} />
+            <Stack.Screen name="Exercise"           component={ExerciseScreen} />
+            <Stack.Screen name="WorkoutSurvey"      component={WorkoutSurveyScreen} />
+            <Stack.Screen name="Prs"                component={PrsScreen} />
           </>
         )}
       </Stack.Navigator>

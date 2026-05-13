@@ -6,7 +6,6 @@ import {
   DataPoint, Divider, Icon, PrimaryButton,
 } from '../components/ui';
 import PaywallModal from '../components/PaywallModal';
-import { RECIPES } from '../constants/data';
 import { useApp } from '../context/AppContext';
 import { MONO } from '../constants/fonts';
 
@@ -54,7 +53,7 @@ export default function RecipesScreen({ navigation }) {
     }
   };
 
-  const allRecipes = [...aiRecipes, ...RECIPES];
+  const allRecipes = aiRecipes;
   const list = filter === 'Todas' ? allRecipes : allRecipes.filter(r => r.tag === filter);
 
   return (
@@ -74,7 +73,7 @@ export default function RecipesScreen({ navigation }) {
             Tus <Text style={{ color: t.accent, fontStyle: 'italic' }}>recetas</Text>
           </H1>
           <Text style={{ color: t.muted, fontSize: 13, lineHeight: 20, marginTop: 8 }}>
-            {RECIPES.length} platos sugeridos a partir de tu despensa, equilibrados para perder peso.
+            {aiRecipes.length} recetas generadas con IA a partir de tu despensa.
           </Text>
         </View>
 

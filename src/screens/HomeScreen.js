@@ -6,46 +6,15 @@ import {
   useTheme, useTabSafeBottom, Eyebrow, H1, H3, Card, Ring, FoodPlaceholder,
   IconButton, Icon, SectionHeader, DataPoint, Divider,
 } from '../components/ui';
-import { RECIPES, MEAL_PLAN, MEALS, SNACKS, DAYS, WORKOUT_WEEK } from '../constants/data';
 import { useApp } from '../context/AppContext';
 import { MONO } from '../constants/fonts';
 
-function getTodayWorkout() {
-  const now = new Date();
-  const dayOfWeek = now.getDay(); // 0 = Sun, 1 = Mon, ... 6 = Sat
-  const dayIndex = (dayOfWeek + 6) % 7; // Adjust to Mon=0, Sun=6
-  return WORKOUT_WEEK[dayIndex] || WORKOUT_WEEK[0];
-}
-
-function getTodayMeals() {
-  const now = new Date();
-  const dayOfWeek = now.getDay();
-  const dayIndex = (dayOfWeek + 6) % 7; // Adjust to Mon=0, Sun=6
-  const mealIds = MEAL_PLAN[dayIndex] || MEAL_PLAN[0];
-
-  const mealTimes = { Desayuno: '08:00', Comida: '14:00', Snack: '17:30', Cena: '21:00' };
-  return [0, 1, 3].map((i, idx) => {
-    const id = mealIds[i];
-    let recipe;
-    if (id.startsWith('snack-')) {
-      recipe = SNACKS[id];
-    } else {
-      recipe = RECIPES.find(r => r.id === id);
-    }
-    const meal = MEALS[i];
-    return {
-      id: `meal-${idx}`,
-      meal: `${meal} · ${mealTimes[meal]}`,
-      recipe,
-      mealId: `meal-${idx}`,
-    };
-  }).filter(m => m.recipe);
-}
+const DAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
 export default function HomeScreen({ navigation }) {
   const t = useTheme();
   const tabBottom = useTabSafeBottom();
-  const { user: u, daily, toggleMealDone, addWater, removeWater, addSteps, weightHistory, logWeight } = useApp();
+  const { user: u, daily, toggleMealDone, addWater, removeWater, addSteps, weightHistory, logWeight, aiRecipes, workoutPlans, pantry } = useApp();
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [newWeight, setNewWeight]             = useState(u.weight);
   const lostKg     = Math.max(0, u.weightStart - u.weight).toFixed(1);
@@ -56,8 +25,9 @@ export default function HomeScreen({ navigation }) {
   const dayName = DAYS[(now.getDay() + 6) % 7];
   const date = `${dayName} · ${now.getDate()} ${['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][now.getMonth()]}`;
 
-  const todayMeals = getTodayMeals().map(m => ({ ...m, done: daily.mealsDone.includes(m.mealId) }));
-  const todayWorkout = getTodayWorkout();
+  const todayDayIndex = (now.getDay() + 6) % 7;
+  const todayWorkout = workoutPlans.find(p => p.day_of_week === todayDayIndex) || null;
+  const latestRecipes = aiRecipes.slice(0, 3);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }}>
@@ -73,7 +43,9 @@ export default function HomeScreen({ navigation }) {
           <IconButton icon="bell" onPress={() => {}} />
         </View>
         <Text style={{ color: t.muted, fontSize: 13, lineHeight: 20, marginHorizontal: 22, marginTop: -4 }}>
-          Llevas <Text style={{ color: t.fg, fontWeight: '600' }}>{u.streak} días</Text> en racha. Hoy toca {todayWorkout.focus.split('·')[0].toLowerCase()} y tienes {todayMeals.length} comidas planeadas.
+          Llevas <Text style={{ color: t.fg, fontWeight: '600' }}>{u.streak} días</Text> en racha.
+          {todayWorkout ? ` Hoy toca ${(todayWorkout.focus || '').split('·')[0]?.toLowerCase() || 'entrenar'}.` : ''}
+          {pantry.length > 0 ? ` Tienes ${pantry.length} productos en la despensa.` : ''}
         </Text>
 
         {/* Scan CTA */}
@@ -181,38 +153,73 @@ export default function HomeScreen({ navigation }) {
           </Card>
         </View>
 
-        {/* Today's meals */}
-        <View style={{ marginHorizontal: 22, marginTop: 24 }}>
-          <SectionHeader title="Hoy comes" action="Ver plan" onAction={() => navigation.navigate('Plan')} />
-          <View style={{ gap: 10, marginTop: 12 }}>
-            {todayMeals.map((m, i) => (
-              <TouchableOpacity key={i} onPress={() => navigation.navigate('RecipeDetail', { id: m.recipe.id, mealId: m.mealId })}
-                activeOpacity={0.8}>
-                <Card padded={false} style={{ flexDirection: 'row', alignItems: 'center', padding: 12, gap: 12 }}>
-                  <FoodPlaceholder hue={m.recipe.img?.hue || 18} height={64} style={{ width: 64, borderRadius: 12 }} />
-                  <View style={{ flex: 1 }}>
-                    <Eyebrow>{m.meal}</Eyebrow>
-                    <Text style={{ fontSize: 17, color: t.fg, marginTop: 2 }} numberOfLines={1}>{m.recipe.title}</Text>
-                    <Text style={{ fontSize: 11, color: t.muted, marginTop: 3, fontFamily: MONO }}>
-                      {m.recipe.kcal} kcal {m.recipe.time ? `· ${m.recipe.time} min` : ''}
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => toggleMealDone(m.mealId, { kcal: m.recipe.kcal, protein: m.recipe.p || 0 })}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    style={{
-                      width: 28, height: 28, borderRadius: 999,
-                      borderWidth: 1.5, borderColor: m.done ? t.accent : t.border2,
-                      backgroundColor: m.done ? t.accent : 'transparent',
-                      alignItems: 'center', justifyContent: 'center',
-                    }}>
-                    {m.done && <Icon name="check" size={14} color="#fff" strokeWidth={2.4} />}
-                  </TouchableOpacity>
-                </Card>
-              </TouchableOpacity>
-            ))}
+        {/* AI Recipes */}
+        {latestRecipes.length > 0 && (
+          <View style={{ marginHorizontal: 22, marginTop: 24 }}>
+            <SectionHeader title="Recetas generadas" action="Ver todas" onAction={() => navigation.navigate('Recipes')} />
+            <View style={{ gap: 10, marginTop: 12 }}>
+              {latestRecipes.map(r => (
+                <TouchableOpacity key={r.id} onPress={() => navigation.navigate('RecipeDetail', { id: r.id })}
+                  activeOpacity={0.8}>
+                  <Card padded={false} style={{ flexDirection: 'row', alignItems: 'center', padding: 12, gap: 12 }}>
+                    <FoodPlaceholder hue={r.img?.hue || 18} height={64} style={{ width: 64, borderRadius: 12 }} />
+                    <View style={{ flex: 1 }}>
+                      <Eyebrow>{r.tag || 'Receta'}</Eyebrow>
+                      <Text style={{ fontSize: 17, color: t.fg, marginTop: 2 }} numberOfLines={1}>{r.title}</Text>
+                      <Text style={{ fontSize: 11, color: t.muted, marginTop: 3, fontFamily: MONO }}>
+                        {r.kcal} kcal {r.time ? `· ${r.time} min` : ''}
+                      </Text>
+                    </View>
+                    <Icon name="chevron" size={16} color={t.muted} />
+                  </Card>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
-        </View>
+        )}
+
+        {/* Pantry CTA if no recipes yet */}
+        {latestRecipes.length === 0 && pantry.length > 0 && (
+          <View style={{ marginHorizontal: 22, marginTop: 24 }}>
+            <Card style={{ backgroundColor: t.accentSoft, borderColor: t.accent + '44' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                <Icon name="sparkle" size={24} color={t.accent} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, color: t.accentInk, fontWeight: '600' }}>Genera recetas con IA</Text>
+                  <Text style={{ fontSize: 12, color: t.accentInk, opacity: 0.8, marginTop: 2 }}>
+                    Usa los {pantry.length} productos de tu despensa
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={() => navigation.navigate('Recipes')}
+                  style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, backgroundColor: t.accent }}>
+                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Ir</Text>
+                </TouchableOpacity>
+              </View>
+            </Card>
+          </View>
+        )}
+
+        {/* Prompt to scan if no pantry */}
+        {pantry.length === 0 && latestRecipes.length === 0 && (
+          <View style={{ marginHorizontal: 22, marginTop: 24 }}>
+            <Card style={{ backgroundColor: t.fg, borderWidth: 0 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: t.accent, alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name="scan" size={22} color="#fff" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: t.bg, opacity: 0.6 }}>
+                    Empieza aquí
+                  </Text>
+                  <Text style={{ fontSize: 16, color: t.bg, marginTop: 2 }}>Escanea tu primera compra</Text>
+                </View>
+                <TouchableOpacity onPress={() => navigation.navigate('Scan')}>
+                  <Icon name="chevron" size={20} color={t.bg} />
+                </TouchableOpacity>
+              </View>
+            </Card>
+          </View>
+        )}
 
         {/* Today's workout */}
         {todayWorkout && (
@@ -227,9 +234,9 @@ export default function HomeScreen({ navigation }) {
                   justifyContent: 'flex-end', padding: 16,
                 }}>
                   <Text style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: '#fff', opacity: 0.85 }}>
-                    Hoy · {todayWorkout.day}
+                    Hoy · {todayWorkout.name}
                   </Text>
-                  <Text style={{ fontSize: 24, color: '#fff', marginTop: 4 }}>{todayWorkout.name}</Text>
+                  <Text style={{ fontSize: 24, color: '#fff', marginTop: 4 }}>{todayWorkout.focus}</Text>
                 </View>
               </View>
               <View style={{ padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -237,7 +244,7 @@ export default function HomeScreen({ navigation }) {
                 <Divider />
                 <DataPoint label="Ejercicios" value={todayWorkout.exercises?.length || 0} />
                 <Divider />
-                <DataPoint label="Focus" value={todayWorkout.focus.split('·')[0].trim()} />
+                <DataPoint label="Focus" value={(todayWorkout.focus || '').split('·')[0]?.trim() || 'General'} />
               </View>
             </Card>
           </View>

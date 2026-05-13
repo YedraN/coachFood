@@ -227,6 +227,87 @@ REGLAS: Usa SOLO ingredientes de la lista. Genera exactamente 3 recetas diferent
   }
 });
 
+// ── AI workout plan generation ──────────────────────────────────────────────
+const workoutLimiter = rateLimit({ windowMs: 60_000, max: 5, standardHeaders: true, legacyHeaders: false });
+
+app.post('/api/generate-workout', workoutLimiter, requireAuth, async (req, res) => {
+  try {
+    const { goal, level, days, equipment } = req.body;
+
+    if (!goal || !level || !days) {
+      return res.status(400).json({ error: 'Faltan datos: goal, level, days' });
+    }
+
+    const goalLabels = { strength: 'Fuerza', hypertrophy: 'Hipertrofia', endurance: 'Resistencia', general: 'Salud general' };
+    const levelLabels = { beginner: 'Principiante', intermediate: 'Intermedio', advanced: 'Avanzado' };
+
+    const prompt = `Eres un entrenador personal experto. Genera un plan de entrenamiento semanal personalizado.
+
+OBJETIVO: ${goalLabels[goal] || goal}
+NIVEL: ${levelLabels[level] || level}
+DÍAS POR SEMANA: ${days}
+EQUIPO DISPONIBLE: ${equipment?.length ? equipment.join(', ') : 'Ninguno (solo peso corporal)'}
+
+Responde SOLO con un JSON válido (sin markdown, sin explicaciones) con este formato exacto:
+{
+  "workouts": [
+    {
+      "name": "nombre del entrenamiento",
+      "focus": "grupos musculares",
+      "duration": 55,
+      "exercises": [
+        {"name": "ejercicio", "muscle": "grupo muscular", "sets": 4, "reps": "8-10", "rest": 90}
+      ]
+    }
+  ]
+}
+
+REGLAS:
+- Genera exactamente ${days} workouts, uno por día de entrenamiento.
+- Incluye días de descanso intercalados (lun, mié, vie entrenar | mar, jue descanso).
+- Los ejercicios deben ser apropiados para el nivel y equipo disponible.
+- Cada workout debe tener entre 4 y 6 ejercicios.
+- Duración total entre 40 y 60 minutos por sesión.`;
+
+    const completion = await client.chat.completions.create({
+      model: 'gpt-4o-mini',
+      max_tokens: 2048,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    const text = completion.choices[0]?.message?.content;
+    if (!text) {
+      return res.status(500).json({ error: 'Respuesta inesperada de la API' });
+    }
+
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      return res.status(500).json({ error: 'No se encontró JSON válido en la respuesta' });
+    }
+
+    const data = JSON.parse(jsonMatch[0]);
+    const workouts = (data.workouts || []).map((w, i) => ({
+      id: `gen-${Date.now()}-${i}`,
+      name: w.name,
+      focus: w.focus || 'Full body',
+      duration: w.duration || 45,
+      exercises: (w.exercises || []).map((e, j) => ({
+        id: `ex-${j}`,
+        name: e.name,
+        muscle: e.muscle || 'General',
+        sets: e.sets || 3,
+        reps: e.reps || '10',
+        rest: e.rest || 60,
+      })),
+    }));
+
+    res.json({ workouts });
+  } catch (error) {
+    console.error('Error generando workout:', error);
+    res.status(500).json({ error: `Error al generar workout: ${error.message}` });
+  }
+});
+
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 app.listen(PORT, () => {

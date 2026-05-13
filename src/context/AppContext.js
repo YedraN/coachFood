@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { generateRecipes } from '../services/ai';
 
@@ -89,21 +89,33 @@ export function AppProvider({ children }) {
   const [pantry, setPantry]             = useState([]);
   const [weightHistory, setWeightHistory] = useState([]);
   const [aiRecipes, setAiRecipes]       = useState([]);
+  const [workoutPlans, setWorkoutPlans] = useState([]);
+  const [prs, setPrs]                   = useState([]);
+  const loadingRef                      = useRef(false);
 
-  // ── Load all data for an authenticated user ─────────────────
-  const loadUserData = async (userId) => {
-    try {
-      const { data: profile, error } = await supabase
+  const fetchProfile = async (userId, retries = 3) => {
+    for (let i = 0; i < retries; i++) {
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
+      if (data && !error) return data;
+      if (i < retries - 1) await new Promise(r => setTimeout(r, 1000));
+    }
+    return null;
+  };
 
-      if (error || !profile) { setReady(true); return; }
+  // ── Load all data for an authenticated user ─────────────────
+  const loadUserData = async (userId) => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
+    try {
+      const profile = await fetchProfile(userId);
+      if (!profile) { setReady(true); loadingRef.current = false; return; }
 
       setOnboarding(profile.onboarding_done);
-
-      if (!profile.onboarding_done) { setReady(true); return; }
+      if (!profile.onboarding_done) { setReady(true); loadingRef.current = false; return; }
 
       setUser(mapProfile(profile));
 
@@ -114,12 +126,16 @@ export function AppProvider({ children }) {
         { data: pantryData },
         { data: weightData },
         { data: recipesData },
+        { data: workoutData },
+        { data: prsData },
       ] = await Promise.all([
         supabase.from('daily_logs').select('*').eq('user_id', userId).eq('date', today).maybeSingle(),
         supabase.from('meals_done').select('meal_id').eq('user_id', userId).eq('log_date', today),
         supabase.from('pantry_items').select('*').eq('user_id', userId).order('added_at', { ascending: false }),
         supabase.from('weight_history').select('date, weight').eq('user_id', userId).order('date', { ascending: true }),
         supabase.from('ai_recipes').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+        supabase.from('workout_plans').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+        supabase.from('prs').select('*').eq('user_id', userId).order('updated_at', { ascending: false }),
       ]);
 
       setDailyState({
@@ -133,10 +149,13 @@ export function AppProvider({ children }) {
       setPantry((pantryData ?? []).map(mapPantryItem));
       setWeightHistory((weightData ?? []).map(w => ({ date: w.date, weight: parseFloat(w.weight) })));
       setAiRecipes((recipesData ?? []).map(mapRecipeFromDb));
+      setWorkoutPlans(workoutData ?? []);
+      setPrs(prsData ?? []);
     } catch (err) {
       console.error('Error loading user data:', err);
     } finally {
       setReady(true);
+      loadingRef.current = false;
     }
   };
 
@@ -147,21 +166,23 @@ export function AppProvider({ children }) {
     setPantry([]);
     setWeightHistory([]);
     setAiRecipes([]);
+    setWorkoutPlans([]);
+    setPrs([]);
   };
 
   // ── Auth state listener ──────────────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) {
+      if (session && !loadingRef.current) {
         loadUserData(session.user.id);
-      } else {
+      } else if (!session) {
         setReady(true);
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN') {
+      if (event === 'SIGNED_IN' && !loadingRef.current) {
         setSession(session);
         loadUserData(session.user.id);
       } else if (event === 'SIGNED_OUT') {
@@ -412,6 +433,96 @@ export function AppProvider({ children }) {
     setAiRecipes([]);
   };
 
+  // ── Workout ───────────────────────────────────────────────────
+  const generateWorkoutPlan = async (survey) => {
+    const { data: { session: s } } = await supabase.auth.getSession();
+    const userId = s?.user?.id;
+    if (!userId) throw new Error('No hay sesión');
+
+    const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+    const token = s.access_token;
+
+    const response = await fetch(`${API_URL}/api/generate-workout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(survey),
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error || 'Error al generar plan');
+    }
+
+    const { workouts } = await response.json();
+
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
+    const weekStr = weekStart.toISOString().slice(0, 10);
+
+    const dayLabels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    const planDays = [];
+
+    const trainingDays = workouts.map((w, i) => {
+      const dayIndex = i * Math.floor(7 / (workouts.length || 1));
+      return { ...w, dayOfWeek: Math.min(dayIndex, 6), dayLabel: dayLabels[Math.min(dayIndex, 6)] };
+    });
+
+    const inserts = trainingDays.map((w) => ({
+      user_id: userId,
+      week_start: weekStr,
+      day_of_week: w.dayOfWeek,
+      name: w.name,
+      focus: w.focus,
+      duration: w.duration,
+      exercises: w.exercises,
+    }));
+
+    const { data, error } = await supabase.from('workout_plans').insert(inserts).select();
+    if (error) throw error;
+
+    await supabase.from('profiles').update({
+      workout_days: survey.days,
+      workout_goal: survey.goal,
+      workout_level: survey.level,
+      workout_equipment: survey.equipment || [],
+      has_done_workout_survey: true,
+    }).eq('id', userId);
+
+    setWorkoutPlans(prev => [...(data ?? []), ...prev]);
+    return data ?? [];
+  };
+
+  const markWorkoutDone = async (planId) => {
+    const { data: { session: s } } = await supabase.auth.getSession();
+    const userId = s?.user?.id;
+    if (!userId) return;
+    await supabase.from('workout_plans').update({ done: true }).eq('id', planId).eq('user_id', userId);
+    setWorkoutPlans(prev => prev.map(p => p.id === planId ? { ...p, done: true } : p));
+  };
+
+  // ── PRs ───────────────────────────────────────────────────────
+  const upsertPr = async (exercise, weight, reps = 1, notes = '') => {
+    const { data: { session: s } } = await supabase.auth.getSession();
+    const userId = s?.user?.id;
+    if (!userId) return;
+    const now = new Date().toISOString();
+    const { data, error } = await supabase.from('prs').upsert({
+      user_id: userId,
+      exercise,
+      weight,
+      reps,
+      date: todayStr(),
+      notes,
+      updated_at: now,
+    }, { onConflict: 'user_id,exercise' }).select().single();
+    if (!error && data) {
+      setPrs(prev => {
+        const filtered = prev.filter(p => p.exercise !== exercise);
+        return [data, ...filtered];
+      });
+    }
+  };
+
   // ── Premium ──────────────────────────────────────────────────
   const activatePremium = async (days = 7) => {
     const expiresAt = new Date();
@@ -429,12 +540,14 @@ export function AppProvider({ children }) {
   return (
     <AppCtx.Provider value={{
       ready, session, onboardingDone, user, daily, pantry, weightHistory, aiRecipes,
+      workoutPlans, prs,
       completeOnboarding, updateUser, saveDaily, refreshUser,
       toggleMealDone, addWater, removeWater, addSteps,
       addToPantry, removeFromPantry, clearPantry,
       logWeight, logout, generateAiRecipes, deleteAiRecipes,
       aiGenerationsThisMonth, AI_FREE_LIMIT,
       activatePremium, deactivatePremium,
+      generateWorkoutPlan, markWorkoutDone, upsertPr,
     }}>
       {children}
     </AppCtx.Provider>

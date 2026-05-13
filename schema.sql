@@ -301,3 +301,98 @@ create policy "ai_recipes: delete own"
 create index idx_ai_recipes_user on public.ai_recipes (user_id, created_at desc);
 
 grant select, insert, delete on public.ai_recipes to authenticated;
+
+
+-- ============================================================
+-- 7. WORKOUT_PLANS
+--    Plan de entrenamiento generado por IA.
+-- ============================================================
+create table public.workout_plans (
+  id           uuid         primary key default gen_random_uuid(),
+  user_id      uuid         not null references auth.users(id) on delete cascade,
+
+  week_start   date         not null,
+  day_of_week  smallint     not null check (day_of_week between 0 and 6),
+  name         text         not null,
+  focus        text,
+  duration     smallint,
+  exercises    jsonb        not null, -- [{id, name, muscle, sets, reps, rest, weight?}]
+  done         boolean      not null default false,
+
+  created_at   timestamptz  not null default now()
+);
+
+alter table public.workout_plans enable row level security;
+
+create policy "workout_plans: select own"
+  on public.workout_plans for select
+  using (auth.uid() = user_id);
+
+create policy "workout_plans: insert own"
+  on public.workout_plans for insert
+  with check (auth.uid() = user_id);
+
+create policy "workout_plans: update own"
+  on public.workout_plans for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create policy "workout_plans: delete own"
+  on public.workout_plans for delete
+  using (auth.uid() = user_id);
+
+create index idx_workout_plans_user_week on public.workout_plans (user_id, week_start desc);
+
+grant select, insert, update, delete on public.workout_plans to authenticated;
+
+
+-- ============================================================
+-- 8. PRS (Personal Records)
+--    Squat, Bench, Deadlift + ejercicios personalizados.
+-- ============================================================
+create table public.prs (
+  id           uuid         primary key default gen_random_uuid(),
+  user_id      uuid         not null references auth.users(id) on delete cascade,
+
+  exercise     text         not null, -- 'squat', 'bench', 'deadlift', o nombre personalizado
+  weight       numeric(6,1) not null check (weight > 0),
+  reps         smallint     not null default 1,
+  date         date         not null default current_date,
+  notes        text,
+
+  created_at   timestamptz  not null default now(),
+  updated_at   timestamptz  not null default now(),
+
+  unique (user_id, exercise)
+);
+
+alter table public.prs enable row level security;
+
+create policy "prs: select own"
+  on public.prs for select
+  using (auth.uid() = user_id);
+
+create policy "prs: insert own"
+  on public.prs for insert
+  with check (auth.uid() = user_id);
+
+create policy "prs: update own"
+  on public.prs for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create policy "prs: delete own"
+  on public.prs for delete
+  using (auth.uid() = user_id);
+
+grant select, insert, update, delete on public.prs to authenticated;
+
+
+-- ============================================================
+-- 9. Añadir campos al perfil
+-- ============================================================
+alter table public.profiles add column if not exists workout_days smallint     check (workout_days between 1 and 7);
+alter table public.profiles add column if not exists workout_goal text        check (workout_goal in ('strength', 'hypertrophy', 'endurance', 'general'));
+alter table public.profiles add column if not exists workout_level text       check (workout_level in ('beginner', 'intermediate', 'advanced'));
+alter table public.profiles add column if not exists workout_equipment text[] default '{}';
+alter table public.profiles add column if not exists has_done_workout_survey boolean not null default false;
