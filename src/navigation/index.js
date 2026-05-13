@@ -45,6 +45,11 @@ function CustomTabBar({ state, navigation }) {
       borderTopWidth: 1,
       borderTopColor: t.border,
       paddingBottom: insets.bottom,
+      shadowColor: '#000',
+      shadowOffset: { y: -2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 5,
     }}>
       {TAB_ITEMS.map((tab, index) => {
         const isFocused = state.index === index;
@@ -53,16 +58,22 @@ function CustomTabBar({ state, navigation }) {
             key={tab.name}
             onPress={() => { if (!isFocused) navigation.navigate(tab.name); }}
             activeOpacity={0.7}
-            style={{ flex: 1, height: 60, alignItems: 'center', justifyContent: 'center', gap: 3 }}
+            style={{ flex: 1, height: 60, alignItems: 'center', justifyContent: 'center', gap: 2 }}
           >
-            <Icon
-              name={tab.icon}
-              size={22}
-              color={isFocused ? t.accent : t.muted}
-              strokeWidth={isFocused ? 2 : 1.6}
-            />
+            <View style={{
+              width: 36, height: 36, borderRadius: 999,
+              backgroundColor: isFocused ? t.accentSoft : 'transparent',
+              alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Icon
+                name={tab.icon}
+                size={20}
+                color={isFocused ? t.accent : t.muted}
+                strokeWidth={isFocused ? 2 : 1.6}
+              />
+            </View>
             <Text allowFontScaling={false} style={{
-              fontSize: 10,
+              fontSize: 9,
               fontWeight: isFocused ? '600' : '500',
               color: isFocused ? t.accent : t.muted,
               letterSpacing: 0.2,

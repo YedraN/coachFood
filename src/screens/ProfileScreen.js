@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Alert, useWindowDimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Alert, useWindowDimensions, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Line, Polyline } from 'react-native-svg';
 import { useTheme, useTabSafeBottom, Icon } from '../components/ui';
@@ -13,11 +13,18 @@ function Sheet({ visible, onClose, title, children }) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <TouchableOpacity activeOpacity={1} onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}>
-        <TouchableOpacity activeOpacity={1} style={{ marginTop: 'auto', backgroundColor: t.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 22, paddingBottom: 32 }}>
-          <View style={{ width: 40, height: 4, backgroundColor: t.border, borderRadius: 999, alignSelf: 'center', marginBottom: 20 }} />
-          <Text style={{ fontSize: 18, color: t.fg, fontWeight: '700', marginBottom: 16 }}>{title}</Text>
-          {children}
-        </TouchableOpacity>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ marginTop: 'auto' }}>
+          <ScrollView bounces={false} keyboardShouldPersistTaps="handled" style={{
+            backgroundColor: t.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28,
+            maxHeight: '80%',
+          }}>
+            <TouchableOpacity activeOpacity={1} style={{ padding: 22, paddingBottom: 32 }}>
+              <View style={{ width: 40, height: 4, backgroundColor: t.border, borderRadius: 999, alignSelf: 'center', marginBottom: 20 }} />
+              <Text style={{ fontSize: 18, color: t.fg, fontWeight: '700', marginBottom: 16 }}>{title}</Text>
+              {children}
+            </TouchableOpacity>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </TouchableOpacity>
     </Modal>
   );

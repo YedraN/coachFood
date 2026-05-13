@@ -227,10 +227,16 @@ export function AppProvider({ children }) {
     };
 
     const { error } = await supabase.from('profiles').update(profileData).eq('id', userId);
-    if (!error) {
-      setUser(mapProfile({ ...profileData, water_target: 8, steps_target: 10000, is_premium: false, premium_expires_at: null }));
-      setOnboarding(true);
+    if (error) {
+      console.error('Onboarding save error:', error);
+      throw new Error('No se pudieron guardar tus datos. Intenta de nuevo.');
     }
+    const { data: verify } = await supabase.from('profiles').select('onboarding_done').eq('id', userId).single();
+    if (!verify?.onboarding_done) {
+      throw new Error('Error al guardar el progreso. Intenta de nuevo.');
+    }
+    setUser(mapProfile({ ...profileData, water_target: 8, steps_target: 10000, is_premium: false, premium_expires_at: null }));
+    setOnboarding(true);
   };
 
   // ── User profile ─────────────────────────────────────────────

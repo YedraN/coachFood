@@ -26,11 +26,21 @@ export default function OnboardingScreen() {
   const [activity, setActivity] = useState('moderate');
   const [target, setTarget]     = useState(65);
 
+  const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
   const next = async () => {
     if (step < 2) {
       setStep(step + 1);
     } else {
-      await completeOnboarding({ goal, sex, age, weight, height, activity, target });
+      setSaving(true);
+      setErrorMsg('');
+      try {
+        await completeOnboarding({ goal, sex, age, weight, height, activity, target });
+      } catch (e) {
+        setErrorMsg(e.message || 'Error al guardar');
+        setSaving(false);
+      }
     }
   };
 
@@ -88,9 +98,12 @@ export default function OnboardingScreen() {
             </TouchableOpacity>
           )}
           <View style={{ flex: 1 }}>
-            <PrimaryButton onPress={next} icon={step === 2 ? 'sparkle' : 'arrow'}>
-              {step === 2 ? 'Empezar' : 'Continuar'}
+            <PrimaryButton onPress={next} disabled={saving} icon={step === 2 ? 'sparkle' : 'arrow'}>
+              {saving ? 'Guardando...' : step === 2 ? 'Empezar' : 'Continuar'}
             </PrimaryButton>
+            {errorMsg ? (
+              <Text style={{ color: t.warn, fontSize: 12, textAlign: 'center', marginTop: 8 }}>{errorMsg}</Text>
+            ) : null}
           </View>
         </View>
       </KeyboardAvoidingView>
