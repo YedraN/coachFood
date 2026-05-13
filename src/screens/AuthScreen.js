@@ -43,7 +43,7 @@ export default function AuthScreen() {
           options: { data: { full_name: name.trim() } },
         });
         if (e) throw e;
-        setSuccess('¡Cuenta creada! Si recibes un correo de confirmación, ábrelo antes de entrar.');
+        setSuccess('¡Cuenta creada! Iniciando sesión...');
       } else {
         const { error: e } = await supabase.auth.signInWithPassword({
           email: email.trim(),

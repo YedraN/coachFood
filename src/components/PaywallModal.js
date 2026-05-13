@@ -28,7 +28,7 @@ export default function PaywallModal({ visible, onClose, userId, aiGenerationsTh
     }
     setLoading(true);
     try {
-      const { url } = await createCheckoutSession(userId);
+      const { url } = await createCheckoutSession();
       const result = await WebBrowser.openAuthSessionAsync(url, 'coachfood://');
       if (result.type === 'success' && result.url?.includes('premium/success')) {
         await new Promise(r => setTimeout(r, 2500));

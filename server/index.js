@@ -1,20 +1,44 @@
 import express from 'express';
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import rateLimit from 'express-rate-limit';
 
 dotenv.config();
+
+const REQUIRED_ENV = ['OPENAI_API_KEY', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
+const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
+if (missing.length) {
+  console.error('Missing required env vars:', missing.join(', '));
+  process.exit(1);
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_KEY });
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-app.use(cors());
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:3000', 'http://10.0.2.2:3000'];
+
+app.use(cors({ origin: ALLOWED_ORIGINS }));
+
+const aiLimiter = rateLimit({ windowMs: 60_000, max: 10, standardHeaders: true, legacyHeaders: false });
+const checkoutLimiter = rateLimit({ windowMs: 60_000, max: 5, standardHeaders: true, legacyHeaders: false });
+
+async function requireAuth(req, res, next) {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Token requerido' });
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data.user) return res.status(401).json({ error: 'Token inválido' });
+  req.user = data.user;
+  next();
+}
 
 // Webhook needs raw body — register before express.json()
 app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -88,9 +112,8 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
 app.use(express.json());
 
 // ── Stripe checkout session ──────────────────────────────────────────────────
-app.post('/api/create-checkout-session', async (req, res) => {
-  const { userId } = req.body;
-  if (!userId) return res.status(400).json({ error: 'userId requerido' });
+app.post('/api/create-checkout-session', checkoutLimiter, requireAuth, async (req, res) => {
+  const userId = req.user.id;
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -110,12 +133,16 @@ app.post('/api/create-checkout-session', async (req, res) => {
 });
 
 // ── AI recipe generation ─────────────────────────────────────────────────────
-app.post('/api/generate-recipes', async (req, res) => {
+app.post('/api/generate-recipes', aiLimiter, requireAuth, async (req, res) => {
   try {
     const { pantry, user } = req.body;
 
     if (!user || !pantry || pantry.length === 0) {
       return res.status(400).json({ error: 'Se necesita usuario y despensa con ingredientes' });
+    }
+
+    if (pantry.length > 50) {
+      return res.status(400).json({ error: 'Máximo 50 ingredientes por petición' });
     }
 
     const ingredientsList = pantry
@@ -155,18 +182,18 @@ Responde SOLO con un JSON válido (sin markdown, sin explicaciones) con este for
 
 REGLAS: Usa SOLO ingredientes de la lista. Genera exactamente 3 recetas diferentes.`;
 
-    const message = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+    const completion = await client.chat.completions.create({
+      model: 'gpt-4o-mini',
       max_tokens: 2048,
       messages: [{ role: 'user', content: prompt }],
     });
 
-    const content = message.content[0];
-    if (content.type !== 'text') {
+    const text = completion.choices[0]?.message?.content;
+    if (!text) {
       return res.status(500).json({ error: 'Respuesta inesperada de la API' });
     }
 
-    const jsonMatch = content.text.match(/\{[\s\S]*\}/);
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       return res.status(500).json({ error: 'No se encontró JSON válido en la respuesta' });
     }

@@ -31,6 +31,13 @@
       "edgeToEdgeEnabled": true,
       "permissions": [
         "android.permission.CAMERA"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [{ "scheme": "coachfood" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
       ]
     },
     "web": {
@@ -48,7 +55,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "coachfood"
+        "projectId": "c31406b8-0984-4588-90d7-3e3863d47782"
       }
     }
   }

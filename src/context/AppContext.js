@@ -173,7 +173,7 @@ export function AppProvider({ children }) {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => { subscription.unsubscribe(); };
   }, []);
 
   // ── Onboarding ───────────────────────────────────────────────

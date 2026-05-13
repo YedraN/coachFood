@@ -15,7 +15,16 @@
       "mcp__plugin_supabase_supabase__list_tables",
       "mcp__plugin_supabase_supabase__get_project_url",
       "mcp__plugin_supabase_supabase__get_publishable_keys",
-      "mcp__plugin_supabase_supabase__execute_sql"
+      "mcp__plugin_supabase_supabase__execute_sql",
+      "Read(//c/Program Files/Eclipse Adoptium/**)",
+      "Read(//c/Program Files/**)",
+      "Read(//c/Program Files/Microsoft/**)",
+      "Bash(where javac *)",
+      "PowerShell(Get-Command *)",
+      "PowerShell(Get-ChildItem \"C:\\\\Program Files\\\\\" | Where-Object { $_.Name -match \"java|jdk|jre|adoptium|temurin|microsoft|corretto\" -or $_.Name -match \"Java\" } | Select-Object Name, FullName)",
+      "Bash(cmd *)",
+      "PowerShell($env:JAVA_HOME)",
+      "Bash(npm uninstall *)"
     ]
   }
 }
