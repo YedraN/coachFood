@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, Path, Rect, Polyline } from 'react-native-svg';
 import { MONO } from '../constants/fonts';
 
 // ─── Theme context ────────────────────────────────────────────
@@ -18,7 +18,8 @@ export const SHADOW = {
 
 // ─── Tab-bar-aware bottom padding ────────────────────────────
 export function useTabSafeBottom() {
-  return 100;
+  const insets = useSafeAreaInsets();
+  return 100 + Math.max(insets.bottom, Platform.OS === 'android' ? 8 : 0);
 }
 
 // ─── Food placeholder (gradient card) ────────────────────────
@@ -83,7 +84,7 @@ export function Card({ children, style, onPress, padded = true }) {
       backgroundColor: t.surface,
       borderWidth: 1, borderColor: t.border,
       borderRadius: 20,
-      padding: padded ? 18 : 0,
+      padding: padded ? 20 : 0,
       overflow: 'hidden',
       ...SHADOW.md,
     }, style]}>
@@ -100,7 +101,7 @@ export function PrimaryButton({ children, onPress, icon, style, disabled }) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.85} disabled={disabled}
       style={[{
-        height: 52, backgroundColor: disabled ? t.muted : t.accent,
+        height: 54, backgroundColor: disabled ? t.muted : t.accent,
         borderRadius: 999, alignItems: 'center', justifyContent: 'center',
         flexDirection: 'row', gap: 8,
         ...SHADOW.sm,
@@ -113,19 +114,19 @@ export function PrimaryButton({ children, onPress, icon, style, disabled }) {
   );
 }
 
-export function GhostButton({ children, onPress, icon, full = false }) {
+export function GhostButton({ children, onPress, icon, full = false, style }) {
   const t = useTheme();
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={{
-      height: 44,
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={[{
+      height: 48,
       width: full ? '100%' : undefined,
-      paddingHorizontal: 16,
+      paddingHorizontal: 20,
       borderRadius: 999,
       borderWidth: 1, borderColor: t.border2,
       alignItems: 'center', justifyContent: 'center',
-      flexDirection: 'row', gap: 6,
+      flexDirection: 'row', gap: 8,
       backgroundColor: 'transparent',
-    }}>
+    }, style]}>
       {icon && <Icon name={icon} size={16} color={t.fg} />}
       <Text style={{ color: t.fg, fontSize: 14, fontWeight: '500' }}>{children}</Text>
     </TouchableOpacity>
@@ -137,7 +138,7 @@ export function Chip({ children, active, onPress }) {
   const t = useTheme();
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.75} style={{
-      height: 32, paddingHorizontal: 14, borderRadius: 999,
+      height: 36, paddingHorizontal: 18, borderRadius: 999,
       backgroundColor: active ? t.fg : t.chipBg,
       alignItems: 'center', justifyContent: 'center',
     }}>
@@ -195,7 +196,7 @@ export function MacroBar({ p, c, f, compact }) {
         ))}
       </View>
       {!compact && (
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
           {macros.map(m => (
             <View key={m.key}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
@@ -214,7 +215,7 @@ export function MacroBar({ p, c, f, compact }) {
 }
 
 // ─── Icon button ──────────────────────────────────────────────
-export function IconButton({ icon, onPress, active, size = 36 }) {
+export function IconButton({ icon, onPress, active, size = 40 }) {
   const t = useTheme();
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.75} style={{
@@ -234,8 +235,8 @@ export function TopBar({ left, title, right, sub }) {
   const insets = useSafeAreaInsets();
   return (
     <View style={{
-      paddingTop: insets.top + 14, paddingBottom: 14, paddingHorizontal: 22,
-      flexDirection: 'row', alignItems: 'center', gap: 12,
+      paddingTop: insets.top + 16, paddingBottom: 16, paddingHorizontal: 22,
+      flexDirection: 'row', alignItems: 'center', gap: 14,
       backgroundColor: t.bg,
     }}>
       <View style={{ width: 36, alignItems: 'flex-start' }}>{left}</View>
@@ -255,9 +256,9 @@ export function SectionHeader({ title, action, onAction }) {
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
       <H3>{title}</H3>
       {action && (
-        <TouchableOpacity onPress={onAction} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-          <Text style={{ color: t.accent, fontSize: 12, fontWeight: '600' }}>{action}</Text>
-          <Icon name="chevron" size={14} color={t.accent} />
+        <TouchableOpacity onPress={onAction} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <Text style={{ color: t.accent, fontSize: 13, fontWeight: '600' }}>{action}</Text>
+          <Icon name="chevron" size={16} color={t.accent} />
         </TouchableOpacity>
       )}
     </View>
@@ -387,6 +388,13 @@ export function Icon({ name, size = 20, color = 'currentColor', strokeWidth = 1.
       <>
         <Circle {...props} cx="12" cy="12" r="4" />
         <Path {...props} d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+      </>
+    ),
+    'log-out': (
+      <>
+        <Path {...props} d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+        <Polyline {...props} points="16 17 21 12 16 7" />
+        <Path {...props} d="M21 12H9" />
       </>
     ),
   };

@@ -1,10 +1,10 @@
 # Backend Server - CoachFood
 
-API backend Node.js/Express para generar recetas con OpenAI.
+API backend Node.js/Express para generar recetas con Gemini.
 
 ## Descripción
 
-Este servidor maneja las llamadas a la API de OpenAI para la generación de recetas personalizadas. Se comunica con la app mobile React Native/Expo mediante REST API.
+Este servidor maneja las llamadas a la API de Gemini para la generación de recetas personalizadas. Se comunica con la app mobile React Native/Expo mediante REST API.
 
 ## Por qué existe
 
@@ -22,9 +22,9 @@ npm install
 cp .env.example .env
 ```
 
-Edita `.env` y añade tu API key de OpenAI (obtén una en https://platform.openai.com/api-keys):
+Edita `.env` y añade tu API key de Gemini (obtén una en https://aistudio.google.com/apikey):
 ```
-OPENAI_API_KEY=sk-proj-xxx...
+GEMINI_API_KEY=tu-clave-de-gemini
 PORT=3000
 ```
 
@@ -105,7 +105,7 @@ Health check para verificar que el servidor está activo.
 
 ### Railway (recomendado)
 1. Conectar repo en Railway
-2. Añadir variable de entorno `OPENAI_API_KEY`
+2. Añadir variable de entorno `GEMINI_API_KEY`
 3. Deploy automático
 
 ### Heroku
@@ -125,10 +125,10 @@ server/
 
 ## Troubleshooting
 
-**Error: "Cannot find module 'openai'"**
+**Error: "Cannot find module '@google/generative-ai'"**
 - Ejecuta `npm install`
 
-**Error: "OPENAI_API_KEY is not defined"**
+**Error: "GEMINI_API_KEY is not defined"**
 - Verifica que `server/.env` existe y tiene la variable configurada
 - Verifica que estás en el directorio `server/` antes de ejecutar
 
@@ -137,4 +137,4 @@ server/
 
 **API returns 500 error**
 - Revisa la consola para ver el error específico
-- Verifica que la API key es válida en https://platform.openai.com/api-keys
+- Verifica que la API key es válida en https://aistudio.google.com/apikey

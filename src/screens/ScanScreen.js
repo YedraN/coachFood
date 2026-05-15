@@ -141,30 +141,30 @@ function ScanIdle({ t, onStart, hasPermission }) {
     <ScrollView contentContainerStyle={{ padding: 22, paddingBottom: 40 }}>
       <View style={{
         backgroundColor: t.surface, borderWidth: 1, borderColor: t.border,
-        borderRadius: 22, padding: 22,
+        borderRadius: 22, padding: 24,
       }}>
         <Eyebrow>Cómo funciona</Eyebrow>
-        <H2 style={{ marginTop: 8 }}>
+        <H2 style={{ marginTop: 10 }}>
           Escanea un producto y añádelo a tu{' '}
           <Text style={{ color: t.accent, fontStyle: 'italic' }}>despensa</Text>.
         </H2>
-        <Text style={{ color: t.muted, fontSize: 13, lineHeight: 20, marginTop: 12 }}>
+        <Text style={{ color: t.muted, fontSize: 14, lineHeight: 22, marginTop: 14 }}>
           Usamos Open Food Facts para obtener el nombre, calorías y macros de cualquier producto por su código de barras.
         </Text>
       </View>
 
-      <View style={{ marginTop: 14, gap: 10 }}>
+      <View style={{ marginTop: 16, gap: 12 }}>
         {[
           { n: '01', t: 'Apunta la cámara al código de barras del producto.' },
           { n: '02', t: 'Obtenemos calorías, proteínas, hidratos y grasas.' },
           { n: '03', t: 'Elige la cantidad y añádelo a tu despensa.' },
         ].map(s => (
           <View key={s.n} style={{
-            flexDirection: 'row', gap: 12, padding: 12,
+            flexDirection: 'row', gap: 14, padding: 14,
             backgroundColor: t.surface, borderWidth: 1, borderColor: t.border, borderRadius: 14,
           }}>
             <Text style={{ fontFamily: MONO, fontSize: 11, color: t.accent }}>{s.n}</Text>
-            <Text style={{ flex: 1, fontSize: 13, color: t.fg, lineHeight: 20 }}>{s.t}</Text>
+            <Text style={{ flex: 1, fontSize: 14, color: t.fg, lineHeight: 22 }}>{s.t}</Text>
           </View>
         ))}
       </View>
@@ -292,39 +292,39 @@ function ScanFound({ t, product, grams, setGrams, onAdd, onRetry }) {
 
       {/* Quantity selector */}
       <View style={{
-        marginTop: 16, backgroundColor: t.surface, borderWidth: 1, borderColor: t.border,
-        borderRadius: 16, padding: 16,
+        marginTop: 18, backgroundColor: t.surface, borderWidth: 1, borderColor: t.border,
+        borderRadius: 16, padding: 18,
       }}>
         <Eyebrow>Cantidad</Eyebrow>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
           <TouchableOpacity
             onPress={() => setGrams(g => Math.max(10, g - 50))}
             style={{
-              width: 40, height: 40, borderRadius: 999,
+              width: 44, height: 44, borderRadius: 999,
               borderWidth: 1, borderColor: t.border2, backgroundColor: t.bg,
               alignItems: 'center', justifyContent: 'center',
             }}>
-            <Text style={{ color: t.fg, fontSize: 20, lineHeight: 24 }}>−</Text>
+            <Text style={{ color: t.fg, fontSize: 22, lineHeight: 26 }}>−</Text>
           </TouchableOpacity>
           <View style={{ flex: 1, alignItems: 'center' }}>
-            <Text style={{ fontSize: 32, color: t.fg }}>
-              {grams}<Text style={{ fontSize: 16, color: t.muted }}> g</Text>
+            <Text style={{ fontSize: 36, color: t.fg }}>
+              {grams}<Text style={{ fontSize: 18, color: t.muted }}> g</Text>
             </Text>
           </View>
           <TouchableOpacity
             onPress={() => setGrams(g => Math.min(2000, g + 50))}
             style={{
-              width: 40, height: 40, borderRadius: 999,
+              width: 44, height: 44, borderRadius: 999,
               backgroundColor: t.accent, alignItems: 'center', justifyContent: 'center',
             }}>
-            <Text style={{ color: '#fff', fontSize: 20, lineHeight: 24 }}>+</Text>
+            <Text style={{ color: '#fff', fontSize: 22, lineHeight: 26 }}>+</Text>
           </TouchableOpacity>
         </View>
         {/* Quick presets */}
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, justifyContent: 'center' }}>
+        <View style={{ flexDirection: 'row', gap: 10, marginTop: 14, justifyContent: 'center' }}>
           {[50, 100, 150, 200, 300].map(g => (
             <TouchableOpacity key={g} onPress={() => setGrams(g)} style={{
-              paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999,
+              paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
               backgroundColor: grams === g ? t.fg : t.chipBg,
             }}>
               <Text style={{ fontSize: 12, color: grams === g ? t.bg : t.muted, fontFamily: MONO }}>
@@ -337,22 +337,22 @@ function ScanFound({ t, product, grams, setGrams, onAdd, onRetry }) {
 
       {/* Macros for selected quantity */}
       <View style={{
-        marginTop: 12, backgroundColor: t.surface, borderWidth: 1, borderColor: t.border,
-        borderRadius: 16, padding: 16,
+        marginTop: 14, backgroundColor: t.surface, borderWidth: 1, borderColor: t.border,
+        borderRadius: 16, padding: 18,
       }}>
         <Eyebrow>Macros para {grams} g</Eyebrow>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 }}>
           <MacroCol t={t} label="Kcal"     value={kcal}    color={t.accent} />
           <MacroCol t={t} label="Proteína" value={`${protein}g`} color="#c98a3a" />
           <MacroCol t={t} label="HC"       value={`${carbs}g`}   color={t.muted} />
           <MacroCol t={t} label="Grasa"    value={`${fat}g`}     color={t.muted} />
         </View>
-        <Text style={{ fontSize: 10, color: t.muted, marginTop: 10, fontFamily: MONO, textAlign: 'center' }}>
+        <Text style={{ fontSize: 10, color: t.muted, marginTop: 12, fontFamily: MONO, textAlign: 'center', lineHeight: 16 }}>
           Por 100 g: {product.kcalPer100} kcal · {product.proteinPer100}g prot · {product.carbsPer100}g HC · {product.fatPer100}g grasa
         </Text>
       </View>
 
-      <View style={{ marginTop: 20, gap: 10 }}>
+      <View style={{ marginTop: 22, gap: 12 }}>
         <PrimaryButton onPress={onAdd} icon="plus">Añadir a despensa</PrimaryButton>
         <GhostButton full onPress={onRetry} icon="scan">Escanear otro</GhostButton>
       </View>

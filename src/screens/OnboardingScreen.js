@@ -16,7 +16,7 @@ const STEPS = [
 
 export default function OnboardingScreen() {
   const t = useTheme();
-  const { completeOnboarding } = useApp();
+  const { completeOnboarding, logout } = useApp();
   const [step, setStep]         = useState(0);
   const [goal, setGoal]         = useState('lose');
   const [sex, setSex]           = useState('Mujer');
@@ -49,14 +49,25 @@ export default function OnboardingScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        {/* Progress bar */}
-        <View style={{ flexDirection: 'row', gap: 6, paddingTop: 16, paddingHorizontal: 22 }}>
-          {[0, 1, 2].map(i => (
-            <View key={i} style={{
-              flex: 1, height: 3, borderRadius: 999,
-              backgroundColor: i <= step ? t.accent : t.border,
-            }} />
-          ))}
+        {/* Header: back-to-login + progress bar */}
+        <View style={{ paddingTop: 16, paddingHorizontal: 22 }}>
+          <TouchableOpacity onPress={logout} style={{ alignSelf: 'flex-start', marginBottom: 12 }}>
+            <View style={{
+              flexDirection: 'row', alignItems: 'center', gap: 6,
+              paddingVertical: 4, paddingHorizontal: 2,
+            }}>
+              <Icon name="chevronL" size={16} color={t.muted} />
+              <Text allowFontScaling={false} style={{ fontSize: 13, color: t.muted }}>Volver al inicio de sesión</Text>
+            </View>
+          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            {[0, 1, 2].map(i => (
+              <View key={i} style={{
+                flex: 1, height: 3, borderRadius: 999,
+                backgroundColor: i <= step ? t.accent : t.border,
+              }} />
+            ))}
+          </View>
         </View>
 
         <View style={{ padding: 24, paddingBottom: 12 }}>
@@ -118,11 +129,11 @@ function StepGoal({ t, goal, setGoal }) {
     { id: 'gain',     icon: 'sparkle', title: 'Ganar músculo', sub: 'Superávit con proteína alta' },
   ];
   return (
-    <View style={{ gap: 10 }}>
+    <View style={{ gap: 12 }}>
       {options.map(opt => (
         <TouchableOpacity key={opt.id} onPress={() => setGoal(opt.id)} activeOpacity={0.8}
           style={{
-            flexDirection: 'row', alignItems: 'center', gap: 14, padding: 18,
+            flexDirection: 'row', alignItems: 'center', gap: 14, padding: 20,
             borderWidth: 1, borderColor: goal === opt.id ? t.accent : t.border,
             backgroundColor: goal === opt.id ? t.accentSoft : t.surface,
             borderRadius: 16,
@@ -147,8 +158,8 @@ function StepGoal({ t, goal, setGoal }) {
 
 function StepData({ t, sex, setSex, age, setAge, weight, setWeight, height, setHeight, goal, target, setTarget }) {
   return (
-    <View style={{ gap: 12 }}>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
+    <View style={{ gap: 14 }}>
+      <View style={{ flexDirection: 'row', gap: 10 }}>
         {['Mujer', 'Hombre', 'Otro'].map(s => (
           <TouchableOpacity key={s} onPress={() => setSex(s)} style={{
             flex: 1, height: 46, borderRadius: 14,
@@ -180,11 +191,11 @@ function StepActivity({ t, activity, setActivity, formData }) {
   const { kcalTarget: kcal } = calcTargets({ ...formData, activity });
   const { goal } = formData;
   return (
-    <View style={{ gap: 10 }}>
+    <View style={{ gap: 12 }}>
       {options.map(opt => (
         <TouchableOpacity key={opt.id} onPress={() => setActivity(opt.id)} activeOpacity={0.8}
           style={{
-            flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16,
+            flexDirection: 'row', alignItems: 'center', gap: 14, padding: 18,
             borderWidth: 1, borderColor: activity === opt.id ? t.accent : t.border,
             backgroundColor: activity === opt.id ? t.accentSoft : t.surface,
             borderRadius: 14,
@@ -218,7 +229,7 @@ function NumberRow({ t, label, value, onChange, unit, step = 1, min, max }) {
   const dec = () => onChange(prev => Math.max(min ?? 0,   +(prev - step).toFixed(1)));
   return (
     <View style={{
-      flexDirection: 'row', alignItems: 'center', padding: 14,
+      flexDirection: 'row', alignItems: 'center', padding: 16,
       borderWidth: 1, borderColor: t.border, backgroundColor: t.surface, borderRadius: 14,
     }}>
       <View style={{ flex: 1 }}>

@@ -5,7 +5,7 @@
 - Node.js v18+ y npm
 - Expo CLI: `npm install -g expo-cli`
 - EAS CLI para builds: `npm install -g eas-cli` (opcional, solo para publicar en tiendas)
-- Cuenta en [OpenAI Platform](https://platform.openai.com) para API key
+- API key de [Google AI Studio](https://aistudio.google.com/apikey) para Gemini
 
 ## Setup Local
 
@@ -23,13 +23,13 @@ npm install
 cp .env.example .env
 ```
 
-Edita `server/.env` y añade tu API key de OpenAI:
+Edita `server/.env` y añade tu API key de Gemini:
 ```
-OPENAI_API_KEY=sk-proj-xxx...
+GEMINI_API_KEY=tu-clave-de-gemini
 PORT=3000
 ```
 
-Obtén tu clave aquí: https://platform.openai.com/api-keys
+Obtén tu clave aquí: https://aistudio.google.com/apikey
 
 ### 2. Configurar variables de entorno de la app
 ```bash
@@ -132,7 +132,7 @@ eas secret:create --scope project --name EXPO_PUBLIC_API_URL
 ```
 
 ### Backend (Node.js)
-El backend necesita `OPENAI_API_KEY` en el servidor de producción. Guárdalo como variable de entorno en tu servicio de hosting (Heroku, Vercel, Railway, etc.)
+El backend necesita `GEMINI_API_KEY` en el servidor de producción. Guárdalo como variable de entorno en tu servicio de hosting (Heroku, Vercel, Railway, etc.)
 
 **Nunca commitees `.env` con credenciales reales a git.**
 
@@ -157,7 +157,7 @@ El backend necesita `OPENAI_API_KEY` en el servidor de producción. Guárdalo co
 ### Error: "Cannot connect to API" o recetas no se generan
 - Verifica que el servidor backend está corriendo: `cd server && npm run dev`
 - Verifica que `EXPO_PUBLIC_API_URL` en `.env` es correcto (debe ser `http://localhost:3000` para desarrollo)
-- Verifica que `server/.env` tiene `OPENAI_API_KEY` configurado
+- Verifica que `server/.env` tiene `GEMINI_API_KEY` configurado
 - Abre http://localhost:3000/health en el navegador para confirmar que el servidor responde
 
 ### Error: "Camera permission denied"
@@ -173,7 +173,7 @@ El backend necesita `OPENAI_API_KEY` en el servidor de producción. Guárdalo co
 - **Framework**: React Native + Expo
 - **UI**: Componentes custom con StyleSheet
 - **State**: Context API + AsyncStorage
-- **IA**: OpenAI API (gpt-4o-mini)
+- **IA**: Google Gemini API (gemini-2.0-flash)
 - **Camera**: expo-camera (escaneo de códigos)
 - **Auth**: Local (AsyncStorage) — sin backend real en MVP
 - **Versión**: 1.0.0 (MVP)

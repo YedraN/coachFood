@@ -77,10 +77,10 @@ export default function PantryScreen({ navigation }) {
         {/* Items grid */}
         {items.length > 0 && (
           <View style={{ paddingHorizontal: 22 }}>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
               {items.map((it) => (
                 <View key={it.id} style={{
-                  width: '47.5%',
+                  width: '45%',
                   backgroundColor: t.surface, borderWidth: 1, borderColor: t.border,
                   borderRadius: 16, padding: 14,
                 }}>
@@ -93,20 +93,20 @@ export default function PantryScreen({ navigation }) {
                     </View>
                     <TouchableOpacity
                       onPress={() => removeFromPantry(it.id)}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
                       <Icon name="x" size={14} color={t.muted} strokeWidth={2} />
                     </TouchableOpacity>
                   </View>
-                  <Text style={{ fontSize: 13, fontWeight: '500', color: t.fg, marginTop: 10, lineHeight: 18 }}
+                  <Text style={{ fontSize: 13, fontWeight: '500', color: t.fg, marginTop: 12, lineHeight: 18 }}
                     numberOfLines={2}>
                     {it.name}
                   </Text>
-                  <Text style={{ fontSize: 10, color: t.muted, marginTop: 4, fontFamily: MONO, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  <Text style={{ fontSize: 10, color: t.muted, marginTop: 6, fontFamily: MONO, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                     {it.qty}
                   </Text>
                   {it.kcal > 0 && (
-                    <Text style={{ fontSize: 11, color: t.accent, marginTop: 4, fontFamily: MONO }}>
+                    <Text style={{ fontSize: 11, color: t.accent, marginTop: 6, fontFamily: MONO }}>
                       {it.kcal} kcal · {it.protein}g prot
                     </Text>
                   )}

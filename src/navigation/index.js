@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, ActivityIndicator, Text, TouchableOpacity, Platform } from 'react-native';
-import { BlurView } from 'expo-blur';
+import { GlassView, isLiquidGlassAvailable, isGlassEffectAPIAvailable } from 'expo-glass-effect';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -37,12 +37,11 @@ const TAB_ITEMS = [
 
 function TabBarInner({ state, navigation }) {
   const t      = useTheme();
-  const insets = useSafeAreaInsets();
 
   return (
     <View style={{
       flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly',
-      height: 64, paddingHorizontal: 6,
+      height: 72, paddingHorizontal: 8,
     }}>
       {TAB_ITEMS.map((tab, index) => {
         const isFocused = state.index === index;
@@ -52,14 +51,13 @@ function TabBarInner({ state, navigation }) {
             onPress={() => { if (!isFocused) navigation.navigate(tab.name); }}
             activeOpacity={0.7}
             style={{
-              flex: 1, height: 52, alignItems: 'center', justifyContent: 'center', gap: 2,
+              flex: 1, height: 56, alignItems: 'center', justifyContent: 'center', gap: 4,
             }}
           >
             <View style={{
-              width: isFocused ? 44 : 36, height: isFocused ? 44 : 36, borderRadius: 999,
-              backgroundColor: isFocused ? t.accent : t.chipBg,
+              width: isFocused ? 48 : 38, height: isFocused ? 48 : 38, borderRadius: 999,
+              backgroundColor: isFocused ? t.accent : 'transparent',
               alignItems: 'center', justifyContent: 'center',
-              ...(isFocused ? {} : {}),
             }}>
               <Icon
                 name={tab.icon}
@@ -69,7 +67,7 @@ function TabBarInner({ state, navigation }) {
               />
             </View>
             {isFocused && (
-              <View style={{ width: 4, height: 4, borderRadius: 999, backgroundColor: t.accent }} />
+              <View style={{ width: 5, height: 5, borderRadius: 999, backgroundColor: t.accent }} />
             )}
           </TouchableOpacity>
         );
@@ -81,7 +79,8 @@ function TabBarInner({ state, navigation }) {
 function CustomTabBar({ state, navigation }) {
   const t      = useTheme();
   const insets = useSafeAreaInsets();
-  const tabHeight = 80;
+  const tabHeight = 88;
+  const hasLiquidGlass = Platform.OS === 'ios' && isLiquidGlassAvailable() && isGlassEffectAPIAvailable();
 
   return (
     <View style={{
@@ -90,23 +89,26 @@ function CustomTabBar({ state, navigation }) {
       position: 'absolute',
       bottom: 0, left: 0, right: 0,
       justifyContent: 'flex-end',
-      paddingBottom: Platform.OS === 'ios' ? insets.bottom : Math.max(insets.bottom, 12),
-      pointerEvents: 'box-none',
+      paddingBottom: Platform.OS === 'ios' ? insets.bottom : Math.max(insets.bottom, 16),
     }}>
-      {/* Glass container */}
       <View style={{
         marginHorizontal: 16, borderRadius: 36, overflow: 'hidden',
         ...SHADOW.lg,
       }}>
-        {Platform.OS === 'ios' ? (
-          <BlurView intensity={85} tint={t.isDark ? 'dark' : 'light'}
-            style={{ borderRadius: 36, overflow: 'hidden' }}>
+        {hasLiquidGlass ? (
+          <GlassView
+            glassEffectStyle="regular"
+            colorScheme={t.isDark ? 'dark' : 'light'}
+            style={{ borderRadius: 36, overflow: 'hidden' }}
+          >
             <TabBarInner state={state} navigation={navigation} />
-          </BlurView>
+          </GlassView>
         ) : (
           <View style={{
-            backgroundColor: t.surface + 'F0', borderRadius: 36,
-            borderWidth: 1, borderColor: t.border + '80',
+            backgroundColor: t.surface + '99',
+            borderRadius: 36,
+            borderWidth: Platform.OS === 'android' ? 1 : 1,
+            borderColor: t.border + '50',
           }}>
             <TabBarInner state={state} navigation={navigation} />
           </View>

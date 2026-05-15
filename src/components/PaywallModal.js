@@ -52,12 +52,12 @@ export default function PaywallModal({ visible, onClose, userId, aiGenerationsTh
       >
         <TouchableOpacity activeOpacity={1} onPress={() => {}}>
           <View style={{
-            backgroundColor: t.bg,
+            backgroundColor: t.surface,
             borderTopLeftRadius: 32,
             borderTopRightRadius: 32,
-            paddingHorizontal: 22,
+            paddingHorizontal: 24,
             paddingTop: 28,
-            paddingBottom: Math.max(28, insets.bottom + 16),
+            paddingBottom: Math.max(32, insets.bottom + 20),
           }}>
             {/* Drag indicator */}
             <View style={{
@@ -151,8 +151,8 @@ export default function PaywallModal({ visible, onClose, userId, aiGenerationsTh
               activeOpacity={0.85}
               style={{
                 backgroundColor: t.accent, borderRadius: 999,
-                height: 52, alignItems: 'center', justifyContent: 'center',
-                marginBottom: 10,
+                height: 54, alignItems: 'center', justifyContent: 'center',
+                marginBottom: 12,
               }}
             >
               {loading

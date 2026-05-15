@@ -124,20 +124,20 @@ export default function AuthScreen() {
           {/* Tab selector */}
           <View style={{
             flexDirection: 'row', backgroundColor: t.surface2,
-            borderRadius: 14, padding: 4, marginBottom: 24,
+            borderRadius: 16, padding: 4, marginBottom: 28,
           }}>
             {[['login', 'Entrar'], ['register', 'Registrarse']].map(([m, label]) => (
               <TouchableOpacity
                 key={m}
                 onPress={() => { setMode(m); clear(); }}
                 style={{
-                  flex: 1, height: 40, borderRadius: 10,
+                  flex: 1, height: 44, borderRadius: 12,
                   backgroundColor: mode === m ? t.surface : 'transparent',
                   alignItems: 'center', justifyContent: 'center',
                 }}
               >
                 <Text allowFontScaling={false} style={{
-                  fontSize: 14, fontWeight: '600',
+                  fontSize: 15, fontWeight: '600',
                   color: mode === m ? t.fg : t.muted,
                 }}>
                   {label}
@@ -147,7 +147,7 @@ export default function AuthScreen() {
           </View>
 
           {/* Form fields */}
-          <View style={{ gap: 12 }}>
+          <View style={{ gap: 14 }}>
             {mode === 'register' && (
               <Field t={t} label="Nombre" value={name} onChangeText={setName}
                 placeholder="¿Cómo te llamas?" autoCapitalize="words" />
@@ -255,7 +255,7 @@ function Field({ t, label, value, onChangeText, placeholder, ...props }) {
       borderWidth: 1,
       borderColor: focused ? t.accent : t.border,
       borderRadius: 16,
-      padding: 14,
+      padding: 16,
     }}>
       <Eyebrow>{label}</Eyebrow>
       <TextInput

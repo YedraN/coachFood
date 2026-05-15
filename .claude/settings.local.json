@@ -24,7 +24,14 @@
       "PowerShell(Get-ChildItem \"C:\\\\Program Files\\\\\" | Where-Object { $_.Name -match \"java|jdk|jre|adoptium|temurin|microsoft|corretto\" -or $_.Name -match \"Java\" } | Select-Object Name, FullName)",
       "Bash(cmd *)",
       "PowerShell($env:JAVA_HOME)",
-      "Bash(npm uninstall *)"
+      "Bash(npm uninstall *)",
+      "PowerShell([System.Environment]::SetEnvironmentVariable\\(\"JAVA_HOME\", \"C:\\\\Program Files\\\\Eclipse Adoptium\\\\jdk-17.0.19.10-hotspot\", \"User\"\\); [System.Environment]::GetEnvironmentVariable\\(\"JAVA_HOME\", \"User\"\\))",
+      "PowerShell([System.Environment]::GetEnvironmentVariable\\(\"ANDROID_HOME\", \"User\"\\); [System.Environment]::GetEnvironmentVariable\\(\"ANDROID_HOME\", \"Machine\"\\); $env:ANDROID_HOME)",
+      "PowerShell(Test-Path *)",
+      "PowerShell([System.Environment]::SetEnvironmentVariable\\(\"ANDROID_HOME\", \"C:\\\\Users\\\\FDCV\\\\AppData\\\\Local\\\\Android\\\\Sdk\", \"User\"\\); Write-Output \"ANDROID_HOME set to: $\\([System.Environment]::GetEnvironmentVariable\\('ANDROID_HOME', 'User'\\)\\)\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\FDCV\\\\Documents\\\\coachFood\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)"
     ]
   }
 }

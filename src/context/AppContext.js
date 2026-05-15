@@ -233,13 +233,12 @@ export function AppProvider({ children }) {
       streak:         1,
     };
 
-    const { data: upd, error } = await supabase.from('profiles').update(profileData).eq('id', userId).select();
+    const { data: upd, error } = await supabase.from('profiles')
+      .upsert({ id: userId, ...profileData }, { onConflict: 'id' })
+      .select();
     if (error) {
       console.error('Onboarding save error:', error);
       throw new Error('Error de base de datos: ' + error.message + ' (código: ' + error.code + ')');
-    }
-    if (!upd || upd.length === 0) {
-      throw new Error('No se encontró tu perfil. Cierra sesión y vuelve a entrar.');
     }
     setUser(mapProfile({ ...profileData, water_target: 8, steps_target: 10000, is_premium: false, premium_expires_at: null }));
     setOnboarding(true);

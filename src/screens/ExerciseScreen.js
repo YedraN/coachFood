@@ -73,37 +73,39 @@ export default function ExerciseScreen({ navigation, route }) {
 
         <View style={{ padding: 22 }}>
           <Eyebrow>{plan.focus}</Eyebrow>
-          <H1 style={{ marginTop: 6, fontSize: 30 }}>{plan.name}</H1>
-          <DataPoint label="Duración" value={`${plan.duration} min`} />
+          <H1 style={{ marginTop: 8, fontSize: 30 }}>{plan.name}</H1>
+          <View style={{ marginTop: 8 }}>
+            <DataPoint label="Duración" value={`${plan.duration} min`} />
+          </View>
         </View>
 
         {/* Exercises */}
         <View style={{ paddingHorizontal: 22 }}>
           <SectionHeader title="Ejercicios" />
-          <View style={{ marginTop: 12, gap: 10 }}>
+          <View style={{ marginTop: 14, gap: 12 }}>
             {exercises.map((ex, i) => (
-              <Card key={ex.id} style={{ padding: 14 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Card key={ex.id} style={{ padding: 16 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
                   <View style={{
-                    width: 32, height: 32, borderRadius: 999,
+                    width: 36, height: 36, borderRadius: 999,
                     backgroundColor: t.chipBg, alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <Text style={{ fontSize: 14, color: t.fg }}>{i + 1}</Text>
+                    <Text style={{ fontSize: 15, color: t.fg }}>{i + 1}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 15, color: t.fg, fontWeight: '500' }}>{ex.name}</Text>
+                    <Text style={{ fontSize: 16, color: t.fg, fontWeight: '500' }}>{ex.name}</Text>
                     <Text style={{ fontSize: 10, color: t.muted, marginTop: 2, fontFamily: MONO, letterSpacing: 0.4 }}>
                       {ex.muscle?.toUpperCase()}
                     </Text>
                   </View>
-                  <Text style={{ fontSize: 15, color: t.fg }}>
+                  <Text style={{ fontSize: 16, color: t.fg }}>
                     {ex.sets}×{ex.reps}
                   </Text>
                   {ex.weight && <Text style={{ fontSize: 12, color: t.muted, fontFamily: MONO }}>{ex.weight}</Text>}
                 </View>
 
                 {/* Sets tracker */}
-                <View style={{ flexDirection: 'row', gap: 6, marginTop: 10 }}>
+                <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
                   {Array.from({ length: ex.sets || 3 }).map((_, si) => {
                     const key = `${ex.id}-${si}`;
                     const done = setsDone[key];

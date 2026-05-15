@@ -69,33 +69,33 @@ export default function RecipesScreen({ navigation }) {
       <ScrollView contentContainerStyle={{ paddingBottom: tabBottom }}>
         <View style={{ padding: 22, paddingTop: 16 }}>
           <Eyebrow>Generadas con tu última compra</Eyebrow>
-          <H1 style={{ marginTop: 8 }}>
+          <H1 style={{ marginTop: 10 }}>
             Tus <Text style={{ color: t.accent, fontStyle: 'italic' }}>recetas</Text>
           </H1>
-          <Text style={{ color: t.muted, fontSize: 13, lineHeight: 20, marginTop: 8 }}>
+          <Text style={{ color: t.muted, fontSize: 14, lineHeight: 22, marginTop: 10 }}>
             {aiRecipes.length} recetas generadas con IA a partir de tu despensa.
           </Text>
         </View>
 
         {/* Generar con IA button */}
         {pantry.length > 0 && (
-          <View style={{ paddingHorizontal: 22, marginBottom: 14 }}>
+          <View style={{ paddingHorizontal: 22, marginBottom: 16 }}>
             <TouchableOpacity
               onPress={handleGenerateAI}
               disabled={generating}
               activeOpacity={0.85}
               style={{
                 backgroundColor: t.accent,
-                borderRadius: 16,
-                padding: 14,
+                borderRadius: 18,
+                padding: 16,
                 flexDirection: 'row',
                 alignItems: 'center',
-                gap: 12,
+                gap: 14,
               }}>
               {generating ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Icon name="sparkle" size={18} color="#fff" strokeWidth={2} />
+                <Icon name="sparkle" size={20} color="#fff" strokeWidth={2} />
               )}
               <Text style={{ flex: 1, color: '#fff', fontSize: 15, fontWeight: '600' }}>
                 {generating ? 'Generando recetas...' : 'Generar con IA'}
@@ -165,21 +165,21 @@ function FeaturedRecipe({ t, recipe, onPress }) {
       borderRadius: 22, overflow: 'hidden',
     }}>
       <View>
-        <FoodPlaceholder hue={recipe.img.hue} height={200} />
+        <FoodPlaceholder hue={recipe.img.hue} height={220} />
         <View style={{
-          position: 'absolute', top: 14, left: 14,
+          position: 'absolute', top: 16, left: 16,
           backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 999,
-          paddingHorizontal: 11, paddingVertical: 5,
+          paddingHorizontal: 14, paddingVertical: 6,
         }}>
           <Text style={{ color: '#fff', fontSize: 10, fontFamily: MONO, letterSpacing: 1, textTransform: 'uppercase' }}>
             ★ Sugerencia del día
           </Text>
         </View>
       </View>
-      <View style={{ padding: 18 }}>
+      <View style={{ padding: 20 }}>
         <Eyebrow>{recipe.subtitle}</Eyebrow>
-        <H2 style={{ marginTop: 6 }}>{recipe.title}</H2>
-        <Text style={{ color: t.muted, fontSize: 13, lineHeight: 20, marginTop: 8, marginBottom: 14 }}>{recipe.why}</Text>
+        <H2 style={{ marginTop: 8 }}>{recipe.title}</H2>
+        <Text style={{ color: t.muted, fontSize: 13, lineHeight: 22, marginTop: 10, marginBottom: 16 }}>{recipe.why}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
           <DataPoint label="Tiempo" value={`${recipe.time} min`} />
           <Divider />
@@ -198,8 +198,8 @@ function RecipeRow({ t, recipe, onPress, isAI }) {
       <Card padded={false} style={{ flexDirection: 'row', overflow: 'hidden', position: 'relative' }}>
         {isAI && (
           <View style={{
-            position: 'absolute', top: 8, right: 8, zIndex: 10,
-            backgroundColor: t.accent, paddingHorizontal: 8, paddingVertical: 4,
+            position: 'absolute', top: 10, right: 10, zIndex: 10,
+            backgroundColor: t.accent, paddingHorizontal: 10, paddingVertical: 5,
             borderRadius: 999,
           }}>
             <Text style={{ fontSize: 9, color: '#fff', fontFamily: MONO, fontWeight: '600' }}>
@@ -207,8 +207,8 @@ function RecipeRow({ t, recipe, onPress, isAI }) {
             </Text>
           </View>
         )}
-        <FoodPlaceholder hue={recipe.img?.hue || 18} height={110} style={{ width: 110 }} />
-        <View style={{ flex: 1, padding: 12, justifyContent: 'space-between' }}>
+        <FoodPlaceholder hue={recipe.img?.hue || 18} height={120} style={{ width: 120 }} />
+        <View style={{ flex: 1, padding: 14, justifyContent: 'space-between' }}>
           <View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Eyebrow>{recipe.tag}</Eyebrow>
@@ -216,9 +216,9 @@ function RecipeRow({ t, recipe, onPress, isAI }) {
                 {recipe.match?.uses || 0}/{recipe.match?.total || 0} en casa
               </Text>
             </View>
-            <Text style={{ fontSize: 18, color: t.fg, marginTop: 3, lineHeight: 22 }}>{recipe.title}</Text>
+            <Text style={{ fontSize: 18, color: t.fg, marginTop: 4, lineHeight: 22 }}>{recipe.title}</Text>
           </View>
-          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
             <Text style={{ fontSize: 11, color: t.muted, fontFamily: MONO }}>{recipe.time}min</Text>
             <Text style={{ fontSize: 11, color: t.muted, fontFamily: MONO }}>· {recipe.kcal}kcal</Text>
             <Text style={{ fontSize: 11, color: t.muted, fontFamily: MONO }}>· {recipe.p}g prot</Text>

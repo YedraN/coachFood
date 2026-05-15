@@ -157,23 +157,23 @@ export default function PrsScreen({ navigation }) {
       {modal && (
         <View style={{
           position: 'absolute', bottom: 0, left: 0, right: 0,
-          backgroundColor: t.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28,
-          padding: 22, paddingBottom: 32,
+          backgroundColor: t.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28,
+          padding: 24, paddingBottom: 36,
           borderTopWidth: 1, borderColor: t.border,
           shadowColor: '#000', shadowOffset: { y: -4 }, shadowOpacity: 0.1, shadowRadius: 20,
           elevation: 10,
         }}>
-          <View style={{ width: 40, height: 4, backgroundColor: t.border, borderRadius: 999, alignSelf: 'center', marginBottom: 20 }} />
-          <Text style={{ fontSize: 18, color: t.fg, fontWeight: '600', marginBottom: 16 }}>
+          <View style={{ width: 40, height: 5, backgroundColor: t.border, borderRadius: 999, alignSelf: 'center', marginBottom: 20 }} />
+          <Text style={{ fontSize: 20, color: t.fg, fontWeight: '600', marginBottom: 20 }}>
             {customMode ? 'Nuevo ejercicio' : newName}
           </Text>
 
           {customMode && (
             <View style={{
-              backgroundColor: t.surface, borderWidth: 1, borderColor: t.border,
-              borderRadius: 12, padding: 12, marginBottom: 12,
+              backgroundColor: t.bg, borderWidth: 1, borderColor: t.border,
+              borderRadius: 12, padding: 14, marginBottom: 14,
             }}>
-              <Text style={{ fontSize: 10, color: t.muted, fontFamily: MONO, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 }}>
+              <Text style={{ fontSize: 10, color: t.muted, fontFamily: MONO, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>
                 Nombre del ejercicio
               </Text>
               <TextInput
@@ -186,12 +186,12 @@ export default function PrsScreen({ navigation }) {
             </View>
           )}
 
-          <View style={{ flexDirection: 'row', gap: 10 }}>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
             <View style={{
-              flex: 1, backgroundColor: t.surface, borderWidth: 1, borderColor: t.border,
-              borderRadius: 12, padding: 12,
+              flex: 1, backgroundColor: t.bg, borderWidth: 1, borderColor: t.border,
+              borderRadius: 12, padding: 14,
             }}>
-              <Text style={{ fontSize: 10, color: t.muted, fontFamily: MONO, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 }}>
+              <Text style={{ fontSize: 10, color: t.muted, fontFamily: MONO, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>
                 Peso (kg)
               </Text>
               <TextInput
@@ -200,14 +200,14 @@ export default function PrsScreen({ navigation }) {
                 keyboardType="decimal-pad"
                 placeholder="0"
                 placeholderTextColor={t.muted}
-                style={{ fontSize: 20, color: t.fg }}
+                style={{ fontSize: 22, color: t.fg }}
               />
             </View>
             <View style={{
-              width: 80, backgroundColor: t.surface, borderWidth: 1, borderColor: t.border,
-              borderRadius: 12, padding: 12,
+              width: 90, backgroundColor: t.bg, borderWidth: 1, borderColor: t.border,
+              borderRadius: 12, padding: 14,
             }}>
-              <Text style={{ fontSize: 10, color: t.muted, fontFamily: MONO, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 }}>
+              <Text style={{ fontSize: 10, color: t.muted, fontFamily: MONO, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>
                 Reps
               </Text>
               <TextInput
@@ -216,16 +216,16 @@ export default function PrsScreen({ navigation }) {
                 keyboardType="number-pad"
                 placeholder="1"
                 placeholderTextColor={t.muted}
-                style={{ fontSize: 20, color: t.fg }}
+                style={{ fontSize: 22, color: t.fg }}
               />
             </View>
           </View>
 
-          <PrimaryButton onPress={handleSave} icon="check" style={{ marginTop: 16 }}>
+          <PrimaryButton onPress={handleSave} icon="check" style={{ marginTop: 18 }}>
             {customMode ? 'Añadir' : 'Actualizar PR'}
           </PrimaryButton>
-          <TouchableOpacity onPress={() => setModal(null)} style={{ alignItems: 'center', padding: 12 }}>
-            <Text style={{ color: t.muted, fontSize: 13 }}>Cancelar</Text>
+          <TouchableOpacity onPress={() => setModal(null)} style={{ alignItems: 'center', padding: 14 }}>
+            <Text style={{ color: t.muted, fontSize: 14 }}>Cancelar</Text>
           </TouchableOpacity>
         </View>
       )}

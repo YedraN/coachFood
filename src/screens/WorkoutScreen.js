@@ -67,7 +67,7 @@ export default function WorkoutScreen({ navigation }) {
 
         {/* Week strip */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 22, gap: 6 }}>
+          contentContainerStyle={{ paddingHorizontal: 22, gap: 8 }}>
           {DAY_LABELS.map((d, i) => {
             const w = currentPlan.find(p => p.day_of_week === i);
             const isToday = i === todayDayIndex;
@@ -75,7 +75,7 @@ export default function WorkoutScreen({ navigation }) {
               <TouchableOpacity key={d} onPress={() => {
                 if (w) navigation.navigate('Exercise', { planId: w.id, day: i });
               }} style={{
-                minWidth: 50, paddingVertical: 8, borderRadius: 12,
+                minWidth: 54, paddingVertical: 10, borderRadius: 14,
                 backgroundColor: isToday ? t.fg : (w?.done ? t.accentSoft : t.surface),
                 borderWidth: 1, borderColor: isToday ? t.fg : (w?.done ? t.accent + '33' : t.border),
                 alignItems: 'center',
@@ -83,9 +83,9 @@ export default function WorkoutScreen({ navigation }) {
                 <Text style={{ fontFamily: MONO, fontSize: 9, letterSpacing: 1, color: isToday ? t.bg : t.muted }}>
                   {d.toUpperCase()}
                 </Text>
-                <Text style={{ fontSize: 18, color: isToday ? t.bg : t.fg, marginTop: 4 }}>{10 + i}</Text>
+                <Text style={{ fontSize: 20, color: isToday ? t.bg : t.fg, marginTop: 4 }}>{10 + i}</Text>
                 {(w?.done || isToday) && (
-                  <View style={{ marginTop: 4, width: 4, height: 4, borderRadius: 999, backgroundColor: isToday ? t.bg : t.accent }} />
+                  <View style={{ marginTop: 4, width: 5, height: 5, borderRadius: 999, backgroundColor: isToday ? t.bg : t.accent }} />
                 )}
               </TouchableOpacity>
             );
@@ -111,19 +111,19 @@ export default function WorkoutScreen({ navigation }) {
                   </Text>
                 </View>
               </View>
-              <View style={{ padding: 14 }}>
+              <View style={{ padding: 16 }}>
                 {(todayWorkout.exercises || []).map((e, i) => (
                   <View key={e.id} style={{
-                    flexDirection: 'row', alignItems: 'center', gap: 12,
-                    paddingVertical: 8,
+                    flexDirection: 'row', alignItems: 'center', gap: 14,
+                    paddingVertical: 10,
                     borderBottomWidth: i < todayWorkout.exercises.length - 1 ? 1 : 0,
                     borderColor: t.border,
                   }}>
-                    <View style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: t.chipBg, alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ fontSize: 14, color: t.fg }}>{i + 1}</Text>
+                    <View style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: t.chipBg, alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ fontSize: 15, color: t.fg }}>{i + 1}</Text>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 14, fontWeight: '500', color: t.fg }} numberOfLines={1}>{e.name}</Text>
+                      <Text style={{ fontSize: 15, fontWeight: '500', color: t.fg }} numberOfLines={1}>{e.name}</Text>
                       <Text style={{ fontSize: 10, color: t.muted, marginTop: 2, fontFamily: MONO, letterSpacing: 0.4 }}>
                         {e.muscle.toUpperCase()}
                       </Text>
@@ -134,14 +134,14 @@ export default function WorkoutScreen({ navigation }) {
                     </View>
                   </View>
                 ))}
-                <View style={{ marginTop: 14 }}>
+                <View style={{ marginTop: 16 }}>
                   <PrimaryButton onPress={() => navigation.navigate('Exercise', { planId: todayWorkout.id })} icon="play">
                     Empezar entrenamiento
                   </PrimaryButton>
                 </View>
                 {!todayWorkout.done && (
-                  <TouchableOpacity onPress={() => markWorkoutDone(todayWorkout.id)} style={{ alignItems: 'center', marginTop: 10 }}>
-                    <Text style={{ color: t.muted, fontSize: 12 }}>Marcar como hecho</Text>
+                  <TouchableOpacity onPress={() => markWorkoutDone(todayWorkout.id)} style={{ alignItems: 'center', marginTop: 12 }}>
+                    <Text style={{ color: t.muted, fontSize: 13 }}>Marcar como hecho</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -150,9 +150,9 @@ export default function WorkoutScreen({ navigation }) {
         )}
 
         {/* Full week */}
-        <View style={{ paddingHorizontal: 22, marginTop: 24 }}>
+        <View style={{ paddingHorizontal: 22, marginTop: 28 }}>
           <SectionHeader title="Esta semana" />
-          <View style={{ marginTop: 12, gap: 8 }}>
+          <View style={{ marginTop: 14, gap: 10 }}>
             {DAY_LABELS.map((d, i) => {
               const w = currentPlan.find(p => p.day_of_week === i);
               const isToday = i === todayDayIndex;
@@ -160,24 +160,24 @@ export default function WorkoutScreen({ navigation }) {
               return (
                 <TouchableOpacity key={d} onPress={() => navigation.navigate('Exercise', { planId: w.id })}
                   style={{
-                    flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14,
+                    flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16,
                     backgroundColor: isToday ? t.accentSoft : t.surface,
                     borderWidth: 1, borderColor: isToday ? t.accent + '55' : t.border,
                     borderRadius: 14,
                   }}>
                   <View style={{
-                    width: 42, height: 42, borderRadius: 999,
+                    width: 44, height: 44, borderRadius: 999,
                     backgroundColor: isToday ? t.accent : t.fg,
                     alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <Icon name="dumbbell" size={18} color={isToday ? '#fff' : t.bg} />
+                    <Icon name="dumbbell" size={20} color={isToday ? '#fff' : t.bg} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 16, color: t.fg }}>{w.name}</Text>
-                    <Text style={{ fontSize: 11, color: t.muted, marginTop: 2 }}>{d} · {w.focus}</Text>
+                    <Text style={{ fontSize: 12, color: t.muted, marginTop: 3 }}>{d} · {w.focus}</Text>
                   </View>
                   <Text style={{ fontFamily: MONO, fontSize: 11, color: t.muted }}>{w.duration}min</Text>
-                  {w.done && <Text style={{ fontSize: 9, color: t.accent, letterSpacing: 0.5 }}>✓</Text>}
+                  {w.done && <Text style={{ fontSize: 10, color: t.accent, letterSpacing: 0.5 }}>✓</Text>}
                 </TouchableOpacity>
               );
             })}
@@ -185,14 +185,14 @@ export default function WorkoutScreen({ navigation }) {
         </View>
 
         {/* Generate new plan */}
-        <View style={{ paddingHorizontal: 22, marginTop: 20 }}>
+        <View style={{ paddingHorizontal: 22, marginTop: 24 }}>
           <GhostButton full icon="sparkle" onPress={() => navigation.navigate('WorkoutSurvey')}>
             Generar nuevo plan semanal
           </GhostButton>
         </View>
 
         {/* PRs link */}
-        <View style={{ paddingHorizontal: 22, marginTop: 12 }}>
+        <View style={{ paddingHorizontal: 22, marginTop: 14 }}>
           <GhostButton full icon="weight" onPress={() => navigation.navigate('Prs')}>
             Mis marcas personales (PRs)
           </GhostButton>

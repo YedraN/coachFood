@@ -1,29 +1,35 @@
 import express from 'express';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import ws from 'ws';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
+import { generateWorkoutPlan as localWorkoutGen } from './workoutGenerator.js';
 
 dotenv.config();
 
-const REQUIRED_ENV = ['OPENAI_API_KEY', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
+const REQUIRED_ENV = ['GEMINI_API_KEY', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'SUPABASE_URL', 'SUPABASE_ANON_KEY'];
 const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
 if (missing.length) {
   console.error('Missing required env vars:', missing.join(', '));
   process.exit(1);
 }
+if (!process.env['SUPABASE_SERVICE_ROLE_KEY']) {
+  console.warn('⚠ SUPABASE_SERVICE_ROLE_KEY no está configurada. Webhooks de Stripe y operaciones admin no funcionarán.');
+}
+process.on('unhandledRejection', (reason) => { console.error('Unhandled Rejection:', reason); });
+process.on('uncaughtException', (err) => { console.error('Uncaught Exception:', err); });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
-  realtime: { transport: ws },
-});
+const supabaseAdmin = process.env['SUPABASE_SERVICE_ROLE_KEY']
+  ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { realtime: { transport: ws } })
+  : null;
 
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
@@ -37,10 +43,17 @@ const checkoutLimiter = rateLimit({ windowMs: 60_000, max: 5, standardHeaders: t
 async function requireAuth(req, res, next) {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'Token requerido' });
-  const { data, error } = await supabase.auth.getUser(token);
-  if (error || !data.user) return res.status(401).json({ error: 'Token inválido' });
-  req.user = data.user;
-  next();
+  try {
+    const resp = await fetch(`${process.env.SUPABASE_URL}/auth/v1/user`, {
+      headers: { Authorization: `Bearer ${token}`, apikey: process.env.SUPABASE_ANON_KEY },
+    });
+    if (!resp.ok) return res.status(401).json({ error: 'Token inválido' });
+    req.user = await resp.json();
+    next();
+  } catch (err) {
+    console.error('requireAuth error:', err.message);
+    res.status(500).json({ error: 'Error de autenticación' });
+  }
 }
 
 // Webhook needs raw body — register before express.json()
@@ -54,6 +67,11 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
+  if (!supabaseAdmin) {
+    console.warn('Webhook ignorado: SUPABASE_SERVICE_ROLE_KEY no configurada');
+    return res.json({ received: true });
+  }
+
   try {
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
@@ -63,7 +81,7 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
       const subscription = await stripe.subscriptions.retrieve(session.subscription);
       const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
 
-      await supabase.from('profiles').update({
+      await supabaseAdmin.from('profiles').update({
         is_premium: true,
         premium_expires_at: expiresAt,
         stripe_customer_id: session.customer,
@@ -74,7 +92,7 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
       const invoice = event.data.object;
       if (!invoice.subscription) return res.json({ received: true });
 
-      const { data: profile } = await supabase
+      const { data: profile } = await supabaseAdmin
         .from('profiles')
         .select('id')
         .eq('stripe_customer_id', invoice.customer)
@@ -83,7 +101,7 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
       if (profile) {
         const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
         const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
-        await supabase.from('profiles').update({
+        await supabaseAdmin.from('profiles').update({
           is_premium: true,
           premium_expires_at: expiresAt,
         }).eq('id', profile.id);
@@ -92,14 +110,14 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
 
     if (event.type === 'customer.subscription.deleted') {
       const subscription = event.data.object;
-      const { data: profile } = await supabase
+      const { data: profile } = await supabaseAdmin
         .from('profiles')
         .select('id')
         .eq('stripe_customer_id', subscription.customer)
         .single();
 
       if (profile) {
-        await supabase.from('profiles').update({
+        await supabaseAdmin.from('profiles').update({
           is_premium: false,
           premium_expires_at: null,
         }).eq('id', profile.id);
@@ -185,13 +203,9 @@ Responde SOLO con un JSON válido (sin markdown, sin explicaciones) con este for
 
 REGLAS: Usa SOLO ingredientes de la lista. Genera exactamente 3 recetas diferentes.`;
 
-    const completion = await client.chat.completions.create({
-      model: 'gpt-4o-mini',
-      max_tokens: 2048,
-      messages: [{ role: 'user', content: prompt }],
-    });
-
-    const text = completion.choices[0]?.message?.content;
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
     if (!text) {
       return res.status(500).json({ error: 'Respuesta inesperada de la API' });
     }
@@ -227,10 +241,9 @@ REGLAS: Usa SOLO ingredientes de la lista. Genera exactamente 3 recetas diferent
   }
 });
 
-// ── AI workout plan generation ──────────────────────────────────────────────
-const workoutLimiter = rateLimit({ windowMs: 60_000, max: 5, standardHeaders: true, legacyHeaders: false });
+// ── Workout plan generation (local, no OpenAI needed) ──────────
 
-app.post('/api/generate-workout', workoutLimiter, requireAuth, async (req, res) => {
+app.post('/api/generate-workout', requireAuth, async (req, res) => {
   try {
     const { goal, level, days, equipment } = req.body;
 
@@ -238,70 +251,24 @@ app.post('/api/generate-workout', workoutLimiter, requireAuth, async (req, res) 
       return res.status(400).json({ error: 'Faltan datos: goal, level, days' });
     }
 
-    const goalLabels = { strength: 'Fuerza', hypertrophy: 'Hipertrofia', endurance: 'Resistencia', general: 'Salud general' };
-    const levelLabels = { beginner: 'Principiante', intermediate: 'Intermedio', advanced: 'Avanzado' };
+    const { workouts } = localWorkoutGen({ goal, level, days, equipment });
 
-    const prompt = `Eres un entrenador personal experto. Genera un plan de entrenamiento semanal personalizado.
-
-OBJETIVO: ${goalLabels[goal] || goal}
-NIVEL: ${levelLabels[level] || level}
-DÍAS POR SEMANA: ${days}
-EQUIPO DISPONIBLE: ${equipment?.length ? equipment.join(', ') : 'Ninguno (solo peso corporal)'}
-
-Responde SOLO con un JSON válido (sin markdown, sin explicaciones) con este formato exacto:
-{
-  "workouts": [
-    {
-      "name": "nombre del entrenamiento",
-      "focus": "grupos musculares",
-      "duration": 55,
-      "exercises": [
-        {"name": "ejercicio", "muscle": "grupo muscular", "sets": 4, "reps": "8-10", "rest": 90}
-      ]
-    }
-  ]
-}
-
-REGLAS:
-- Genera exactamente ${days} workouts, uno por día de entrenamiento.
-- Incluye días de descanso intercalados (lun, mié, vie entrenar | mar, jue descanso).
-- Los ejercicios deben ser apropiados para el nivel y equipo disponible.
-- Cada workout debe tener entre 4 y 6 ejercicios.
-- Duración total entre 40 y 60 minutos por sesión.`;
-
-    const completion = await client.chat.completions.create({
-      model: 'gpt-4o-mini',
-      max_tokens: 2048,
-      messages: [{ role: 'user', content: prompt }],
-    });
-
-    const text = completion.choices[0]?.message?.content;
-    if (!text) {
-      return res.status(500).json({ error: 'Respuesta inesperada de la API' });
-    }
-
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      return res.status(500).json({ error: 'No se encontró JSON válido en la respuesta' });
-    }
-
-    const data = JSON.parse(jsonMatch[0]);
-    const workouts = (data.workouts || []).map((w, i) => ({
+    const mapped = workouts.map((w, i) => ({
       id: `gen-${Date.now()}-${i}`,
       name: w.name,
-      focus: w.focus || 'Full body',
-      duration: w.duration || 45,
+      focus: w.focus,
+      duration: Math.round(w.duration / 5) * 5,
       exercises: (w.exercises || []).map((e, j) => ({
         id: `ex-${j}`,
         name: e.name,
-        muscle: e.muscle || 'General',
-        sets: e.sets || 3,
-        reps: e.reps || '10',
-        rest: e.rest || 60,
+        muscle: e.muscle,
+        sets: e.sets,
+        reps: e.reps,
+        rest: e.rest,
       })),
     }));
 
-    res.json({ workouts });
+    res.json({ workouts: mapped });
   } catch (error) {
     console.error('Error generando workout:', error);
     res.status(500).json({ error: `Error al generar workout: ${error.message}` });
@@ -310,6 +277,10 @@ REGLAS:
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
+});
+server.on('error', (err) => {
+  console.error('Error al iniciar servidor:', err.message);
+  process.exit(1);
 });

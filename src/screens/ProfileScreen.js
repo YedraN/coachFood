@@ -1,31 +1,55 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Alert, useWindowDimensions, KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Line, Polyline } from 'react-native-svg';
-import { useTheme, useTabSafeBottom, Icon } from '../components/ui';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme, useTabSafeBottom, Icon, SHADOW } from '../components/ui';
 import PaywallModal from '../components/PaywallModal';
 import { useApp } from '../context/AppContext';
 import { MONO } from '../constants/fonts';
 
-// ── Bottom Sheet wrapper ─────────────────────────────────────────
+// ── Bottom Sheet wrapper (for pickers) ─────────────────────────
 function Sheet({ visible, onClose, title, children }) {
   const t = useTheme();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <TouchableOpacity activeOpacity={1} onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ marginTop: 'auto' }}>
+      <TouchableOpacity activeOpacity={1} onPress={onClose} style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <TouchableOpacity activeOpacity={1} onPress={() => {}}>
           <ScrollView bounces={false} keyboardShouldPersistTaps="handled" style={{
-            backgroundColor: t.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28,
+            backgroundColor: t.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28,
             maxHeight: '80%',
           }}>
-            <TouchableOpacity activeOpacity={1} style={{ padding: 22, paddingBottom: 32 }}>
-              <View style={{ width: 40, height: 4, backgroundColor: t.border, borderRadius: 999, alignSelf: 'center', marginBottom: 20 }} />
-              <Text style={{ fontSize: 18, color: t.fg, fontWeight: '700', marginBottom: 16 }}>{title}</Text>
+            <View style={{ padding: 24, paddingBottom: 36 }}>
+              <View style={{ width: 40, height: 5, backgroundColor: t.border, borderRadius: 999, alignSelf: 'center', marginBottom: 20 }} />
+              <Text style={{ fontSize: 20, color: t.fg, fontWeight: '700', marginBottom: 20 }}>{title}</Text>
               {children}
-            </TouchableOpacity>
+            </View>
           </ScrollView>
-        </KeyboardAvoidingView>
+        </TouchableOpacity>
       </TouchableOpacity>
+    </Modal>
+  );
+}
+
+// ── Center floating modal (for data entry with keyboard) ──────
+function CenterModal({ visible, onClose, title, children }) {
+  const t = useTheme();
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+        <TouchableOpacity activeOpacity={1} onPress={onClose} style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <TouchableOpacity activeOpacity={1} onPress={() => {}} style={{
+            backgroundColor: t.surface, borderRadius: 24, padding: 24,
+            width: '84%', maxWidth: 340,
+            borderWidth: 1, borderColor: t.border,
+            ...SHADOW.lg,
+          }}>
+            <View style={{ width: 40, height: 5, backgroundColor: t.border, borderRadius: 999, alignSelf: 'center', marginBottom: 20 }} />
+            <Text style={{ fontSize: 20, color: t.fg, fontWeight: '700', marginBottom: 20, textAlign: 'center' }}>{title}</Text>
+            {children}
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -116,6 +140,7 @@ const MEALS = [
 
 export default function ProfileScreen({ navigation }) {
   const t = useTheme();
+  const insets = useSafeAreaInsets();
   const tabBottom = useTabSafeBottom();
   const { width } = useWindowDimensions();
   const {
@@ -124,14 +149,14 @@ export default function ProfileScreen({ navigation }) {
   } = useApp();
   const [showPaywall, setShowPaywall] = useState(false);
 
-  // Sheet state
-  const [sheet, setSheet] = useState(null); // 'goal' | 'activity' | 'name' | 'weight' | 'height' | 'age' | 'diet' | 'target' | 'premium'
+  const [sheet, setSheet] = useState(null);
   const [editValue, setEditValue] = useState('');
 
   const totalWorkoutsDone = workoutPlans.filter(p => p.done).length;
   const totalPrs = prs.length;
   const bestPr = prs.length > 0 ? [...prs].sort((a, b) => b.weight - a.weight)[0] : null;
   const progressPct = Math.min(1, Math.max(0, (u.weightStart - u.weight) / Math.max(0.1, u.weightStart - u.weightTarget)));
+  const lostKg = (u.weightStart - u.weight) > 0 ? (u.weightStart - u.weight).toFixed(1) : null;
 
   const openSheet = (name) => {
     setEditValue('');
@@ -171,204 +196,286 @@ export default function ProfileScreen({ navigation }) {
     closeSheet();
   };
 
-  const weekStart = () => {
-    const d = new Date();
-    d.setDate(d.getDate() - d.getDay() + 1);
-    return { mon: d.getDate(), sun: d.getDate() + 6 };
-  };
-
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.bg }}>
       <PaywallModal visible={showPaywall} onClose={() => setShowPaywall(false)}
         userId={session?.user?.id} aiGenerationsThisMonth={aiGenerationsThisMonth()}
         onRefreshUser={refreshUser} theme={t} />
 
       <ScrollView contentContainerStyle={{ paddingBottom: tabBottom + 40 }}>
-        {/* ── Header ───────────────────────────────────────────── */}
-        <View style={{
-          paddingHorizontal: 22, paddingTop: 8, paddingBottom: 28,
-          backgroundColor: t.fg, borderBottomLeftRadius: 32, borderBottomRightRadius: 32,
-        }}>
+        {/* ══════════════════════════════════════════════════════════
+            HEADER — full bleed to top edge
+           ══════════════════════════════════════════════════════════ */}
+        <LinearGradient
+          colors={[t.accent, t.accent + 'CC']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ paddingTop: insets.top + 16, paddingBottom: 28, paddingHorizontal: 22 }}
+        >
+          {/* Top row: label + theme toggle */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={{ fontFamily: MONO, fontSize: 10, color: t.bg, opacity: 0.5, letterSpacing: 1, textTransform: 'uppercase' }}>
+            <Text style={{ fontFamily: MONO, fontSize: 10, color: '#fff', opacity: 0.7, letterSpacing: 1.5, textTransform: 'uppercase' }}>
               Perfil
             </Text>
             <TouchableOpacity onPress={t.toggleTheme} style={{
               width: 36, height: 36, borderRadius: 999,
-              backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center',
+              backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center',
             }}>
               <Icon name={t.isDark ? 'sun' : 'moon'} size={18} color="#fff" />
             </TouchableOpacity>
           </View>
 
-          <View style={{ alignItems: 'center', marginTop: 12 }}>
-            {/* Avatar */}
-            <TouchableOpacity onPress={() => openSheet('name')} style={{
-              width: 80, height: 80, borderRadius: 999,
-              backgroundColor: t.accent, alignItems: 'center', justifyContent: 'center',
-              borderWidth: 3, borderColor: 'rgba(255,255,255,0.25)',
+          {/* Avatar + name */}
+          <View style={{ alignItems: 'center', marginTop: 20 }}>
+            <View style={{
+              width: 96, height: 96, borderRadius: 999,
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              alignItems: 'center', justifyContent: 'center',
+              borderWidth: 3, borderColor: 'rgba(255,255,255,0.4)',
+              ...SHADOW.md,
             }}>
-              <Text style={{ fontSize: 34, color: '#fff' }}>{u.name[0]?.toUpperCase()}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => openSheet('name')} style={{ marginTop: 10 }}>
-              <Text style={{ fontSize: 24, color: '#fff', fontWeight: '700', textAlign: 'center' }}>
+              <TouchableOpacity onPress={() => openSheet('name')} style={{
+                width: '100%', height: '100%', borderRadius: 999,
+                backgroundColor: 'rgba(255,255,255,0.15)',
+                alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Text style={{ fontSize: 40, color: '#fff', fontWeight: '600' }}>{u.name[0]?.toUpperCase()}</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity onPress={() => openSheet('name')} style={{ marginTop: 14 }}>
+              <Text style={{ fontSize: 28, color: '#fff', fontWeight: '700', textAlign: 'center' }}>
                 {u.name} <Text style={{ fontSize: 16, opacity: 0.7 }}>✎</Text>
               </Text>
             </TouchableOpacity>
-            <Text style={{ fontSize: 13, color: '#fff', opacity: 0.6, marginTop: 2 }}>
-              {u.age} años · {u.height} cm · {u.weight} kg
-            </Text>
+            <View style={{ flexDirection: 'row', gap: 6, marginTop: 6 }}>
+              <Text style={{ fontSize: 14, color: '#fff', opacity: 0.75 }}>{u.age} años</Text>
+              <Text style={{ fontSize: 14, color: '#fff', opacity: 0.4 }}>·</Text>
+              <Text style={{ fontSize: 14, color: '#fff', opacity: 0.75 }}>{u.height} cm</Text>
+              <Text style={{ fontSize: 14, color: '#fff', opacity: 0.4 }}>·</Text>
+              <Text style={{ fontSize: 14, color: '#fff', opacity: 0.75 }}>{u.weight} kg</Text>
+            </View>
           </View>
 
-          {/* Stats row */}
-          <View style={{ flexDirection: 'row', marginTop: 18, gap: 8 }}>
+          {/* Achievements row */}
+          <View style={{ flexDirection: 'row', marginTop: 22, gap: 10 }}>
             {[
-              { label: 'Racha', value: `${u.streak}`, unit: 'días', color: '#FFD700' },
-              { label: 'Perdido', value: `${(u.weightStart - u.weight).toFixed(1)}`, unit: 'kg', color: '#4ADE80' },
-              { label: 'PRs', value: `${totalPrs}`, unit: 'marcas', color: '#F472B6' },
+              { icon: 'flame',    value: `${u.streak}`, unit: 'días',  label: 'Racha' },
+              { icon: 'arrow',    value: lostKg ? `-${lostKg}` : '0',  unit: 'kg',   label: lostKg ? 'Perdido' : 'Estable' },
+              { icon: 'dumbbell', value: `${totalWorkoutsDone}`, unit: 'ents', label: 'Completados' },
             ].map((s, i) => (
               <View key={i} style={{
-                flex: 1, backgroundColor: 'rgba(255,255,255,0.08)',
-                borderRadius: 14, padding: 12, alignItems: 'center',
+                flex: 1, backgroundColor: 'rgba(255,255,255,0.12)',
+                borderRadius: 14, padding: 12, alignItems: 'center', gap: 4,
               }}>
-                <Text style={{ fontSize: 20, color: s.color, fontWeight: '700' }}>{s.value}</Text>
-                <Text style={{ fontSize: 10, color: '#fff', opacity: 0.6, marginTop: 2, fontFamily: MONO, letterSpacing: 0.5 }}>
+                <Icon name={s.icon} size={16} color="#fff" strokeWidth={1.8} />
+                <Text style={{ fontSize: 20, color: '#fff', fontWeight: '700' }}>{s.value}</Text>
+                <Text style={{ fontSize: 9, color: '#fff', opacity: 0.55, fontFamily: MONO, letterSpacing: 0.5 }}>
                   {s.unit.toUpperCase()}
                 </Text>
-                <Text style={{ fontSize: 9, color: '#fff', opacity: 0.4, marginTop: 1 }}>{s.label}</Text>
+                <Text style={{ fontSize: 8, color: '#fff', opacity: 0.4 }}>{s.label}</Text>
               </View>
             ))}
           </View>
-        </View>
+        </LinearGradient>
 
-        {/* ── Progress Card ────────────────────────────────────── */}
-        <View style={{ paddingHorizontal: 22, marginTop: -16 }}>
+        {/* ══════════════════════════════════════════════════════════
+            PROGRESS CARD — slides up over the header
+           ══════════════════════════════════════════════════════════ */}
+        <View style={{ paddingHorizontal: 20, marginTop: -20 }}>
           <View style={{
-            backgroundColor: t.surface, borderRadius: 20, padding: 18,
+            backgroundColor: t.surface, borderRadius: 20, padding: 20,
             borderWidth: 1, borderColor: t.border,
-            shadowColor: '#000', shadowOffset: { y: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3,
+            ...SHADOW.md,
           }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-              <ProgressRing pct={progressPct} size={64} stroke={6} color={t.accent} />
+              <ProgressRing pct={progressPct} size={72} stroke={6} color={t.accent} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 13, color: t.muted, fontFamily: MONO, letterSpacing: 0.5, textTransform: 'uppercase' }}>
-                  Progreso hacia tu objetivo
+                  Progreso
                 </Text>
-                <Text style={{ fontSize: 24, color: t.fg, fontWeight: '700', marginTop: 2 }}>
+                <Text style={{ fontSize: 28, color: t.fg, fontWeight: '700', marginTop: 2 }}>
                   {u.weightStart} → {u.weight} kg
                 </Text>
-                <Text style={{ fontSize: 12, color: t.muted, marginTop: 2 }}>
+                <Text style={{ fontSize: 13, color: t.muted, marginTop: 2 }}>
                   Meta: {u.weightTarget} kg ({Math.round(progressPct * 100)}%)
                 </Text>
               </View>
             </View>
             {weightHistory.length >= 2 && (
-              <View style={{ alignItems: 'center', marginTop: 12 }}>
+              <View style={{ alignItems: 'center', marginTop: 14 }}>
                 <MiniChart data={weightHistory} color={t.accent} />
               </View>
             )}
-            <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
               <TouchableOpacity onPress={() => { setEditValue(String(u.weight)); openSheet('weight'); }}
-                style={{ flex: 1, height: 44, borderRadius: 999, backgroundColor: t.accent, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>Registrar peso</Text>
+                style={{ flex: 1, height: 48, borderRadius: 999, backgroundColor: t.accent, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>Registrar peso</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => { setEditValue(String(u.weightTarget)); openSheet('target'); }}
-                style={{ flex: 1, height: 44, borderRadius: 999, backgroundColor: t.surface, borderWidth: 1, borderColor: t.border, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: t.fg, fontSize: 14, fontWeight: '600' }}>Cambiar meta</Text>
+                style={{ flex: 1, height: 48, borderRadius: 999, backgroundColor: 'transparent', borderWidth: 1, borderColor: t.border, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: t.fg, fontSize: 15, fontWeight: '600' }}>Cambiar meta</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
 
-        {/* ── Quick Actions ────────────────────────────────────── */}
-        <View style={{ paddingHorizontal: 22, marginTop: 20 }}>
-          <Text style={{ fontSize: 13, color: t.muted, fontFamily: MONO, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 10 }}>
+        {/* ══════════════════════════════════════════════════════════
+            QUICK ACTIONS
+           ══════════════════════════════════════════════════════════ */}
+        <View style={{ paddingHorizontal: 20, marginTop: 28 }}>
+          <Text style={{
+            fontSize: 13, color: t.muted, fontFamily: MONO, letterSpacing: 0.5,
+            textTransform: 'uppercase', marginBottom: 12, marginLeft: 2,
+          }}>
             Acceso rápido
           </Text>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
             {[
-              { icon: 'scan', label: 'Escanear', onPress: () => navigation.navigate('Scan') },
-              { icon: 'sparkle', label: 'Recetas IA', onPress: () => navigation.navigate('Recipes') },
-              { icon: 'dumbbell', label: 'Entreno', onPress: () => navigation.navigate('Workout') },
-              { icon: 'weight', label: 'PRs', onPress: () => navigation.navigate('Prs') },
+              { icon: 'scan',  label: 'Escanear',      onPress: () => navigation.navigate('Scan') },
+              { icon: 'sparkle',  label: 'Recetas IA',    onPress: () => navigation.navigate('Recipes') },
+              { icon: 'dumbbell', label: 'Entrenar',      onPress: () => navigation.navigate('Workout') },
+              { icon: 'weight',   label: 'Marcas',        onPress: () => navigation.navigate('Prs') },
             ].map((a, i) => (
-              <TouchableOpacity key={i} onPress={a.onPress} style={{
-                flex: 1, backgroundColor: t.surface, borderRadius: 16, padding: 14, alignItems: 'center', gap: 6,
-                borderWidth: 1, borderColor: t.border,
-              }}>
-                <Icon name={a.icon} size={22} color={t.accent} />
+              <TouchableOpacity key={i} onPress={a.onPress} activeOpacity={0.7}
+                style={{
+                  flex: 1, backgroundColor: t.surface, borderRadius: 16, paddingVertical: 18,
+                  alignItems: 'center', gap: 8,
+                  borderWidth: 1, borderColor: t.border,
+                  ...SHADOW.sm,
+                }}>
+                <View style={{
+                  width: 44, height: 44, borderRadius: 14,
+                  backgroundColor: t.accent + '18', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Icon name={a.icon} size={22} color={t.accent} />
+                </View>
                 <Text style={{ fontSize: 10, color: t.muted, fontFamily: MONO, letterSpacing: 0.3 }}>{a.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* ── Settings Sections ────────────────────────────────── */}
-        <View style={{ paddingHorizontal: 22, marginTop: 24 }}>
-          <Section t={t} title="Información personal">
-            <SettingRow icon="flame" label="Objetivo" value={{ lose: 'Perder peso', gain: 'Ganar músculo', maintain: 'Mantener' }[u.goal]}
-              onPress={() => openSheet('goal')} t={t} />
-            <SettingRow icon="walk" label="Actividad" value={{ sedentary: 'Sedentaria', light: 'Ligera', moderate: 'Moderada', active: 'Activa' }[u.activity]}
-              onPress={() => openSheet('activity')} t={t} />
-            <SettingRow icon="weight" label="Peso actual" value={`${u.weight} kg`}
-              onPress={() => { setEditValue(String(u.weight)); openSheet('weight'); }} t={t} />
-            <SettingRow icon="apple" label="Peso objetivo" value={`${u.weightTarget} kg`}
-              onPress={() => { setEditValue(String(u.weightTarget)); openSheet('target'); }} t={t} />
-            <SettingRow icon="user" label="Edad" value={`${u.age} años`}
-              onPress={() => { setEditValue(String(u.age)); openSheet('age'); }} t={t} />
-            <SettingRow icon="user" label="Altura" value={`${u.height} cm`}
-              onPress={() => { setEditValue(String(u.height)); openSheet('height'); }} t={t} last />
-          </Section>
+        {/* ══════════════════════════════════════════════════════════
+            SETTINGS SECTIONS
+           ══════════════════════════════════════════════════════════ */}
+        <View style={{ paddingHorizontal: 20, marginTop: 28, gap: 20 }}>
+          {/* Personal info */}
+          <View>
+            <Text style={{
+              fontSize: 12, color: t.muted, fontFamily: MONO, letterSpacing: 0.5,
+              textTransform: 'uppercase', marginBottom: 10, marginLeft: 4,
+            }}>
+              Información personal
+            </Text>
+            <View style={{
+              backgroundColor: t.surface, borderRadius: 18, overflow: 'hidden',
+              borderWidth: 1, borderColor: t.border,
+              ...SHADOW.sm,
+            }}>
+              <SettingRow icon="flame" label="Objetivo" value={{ lose: 'Perder peso', gain: 'Ganar músculo', maintain: 'Mantener' }[u.goal]}
+                onPress={() => openSheet('goal')} t={t} />
+              <SettingRow icon="walk" label="Actividad" value={{ sedentary: 'Sedentaria', light: 'Ligera', moderate: 'Moderada', active: 'Activa' }[u.activity]}
+                onPress={() => openSheet('activity')} t={t} />
+              <SettingRow icon="user" label="Edad" value={`${u.age} años`}
+                onPress={() => { setEditValue(String(u.age)); openSheet('age'); }} t={t} last />
+            </View>
+          </View>
+
+          {/* Nutrition */}
+          <View>
+            <Text style={{
+              fontSize: 12, color: t.muted, fontFamily: MONO, letterSpacing: 0.5,
+              textTransform: 'uppercase', marginBottom: 10, marginLeft: 4,
+            }}>
+              Nutrición y dieta
+            </Text>
+            <View style={{
+              backgroundColor: t.surface, borderRadius: 18, overflow: 'hidden',
+              borderWidth: 1, borderColor: t.border,
+              ...SHADOW.sm,
+            }}>
+              <SettingRow icon="leaf" label="Preferencia" value="Sin restricciones"
+                onPress={() => openSheet('diet')} t={t} last />
+            </View>
+          </View>
+
+          {/* Training */}
+          <View>
+            <Text style={{
+              fontSize: 12, color: t.muted, fontFamily: MONO, letterSpacing: 0.5,
+              textTransform: 'uppercase', marginBottom: 10, marginLeft: 4,
+            }}>
+              Entrenamiento
+            </Text>
+            <View style={{
+              backgroundColor: t.surface, borderRadius: 18, overflow: 'hidden',
+              borderWidth: 1, borderColor: t.border,
+              ...SHADOW.sm,
+            }}>
+              <SettingRow icon="dumbbell" label="Plan semanal" value={workoutPlans.length > 0 ? 'Activo' : 'Sin plan'}
+                onPress={() => navigation.navigate('Workout')} t={t} />
+              <SettingRow icon="weight" label="Marcas personales" value={`${totalPrs} registradas`}
+                onPress={() => navigation.navigate('Prs')} t={t} last />
+            </View>
+          </View>
+
+          {/* Appearance */}
+          <View>
+            <Text style={{
+              fontSize: 12, color: t.muted, fontFamily: MONO, letterSpacing: 0.5,
+              textTransform: 'uppercase', marginBottom: 10, marginLeft: 4,
+            }}>
+              Apariencia
+            </Text>
+            <View style={{
+              backgroundColor: t.surface, borderRadius: 18, overflow: 'hidden',
+              borderWidth: 1, borderColor: t.border,
+              ...SHADOW.sm,
+            }}>
+              <SettingRow icon={t.isDark ? 'moon' : 'sun'} label="Tema oscuro" value={t.isDark ? 'Activado' : 'Desactivado'}
+                onPress={t.toggleTheme} t={t} last />
+            </View>
+          </View>
+
+          {/* Account */}
+          <View>
+            <Text style={{
+              fontSize: 12, color: t.muted, fontFamily: MONO, letterSpacing: 0.5,
+              textTransform: 'uppercase', marginBottom: 10, marginLeft: 4,
+            }}>
+              Cuenta
+            </Text>
+            <View style={{
+              backgroundColor: t.surface, borderRadius: 18, overflow: 'hidden',
+              borderWidth: 1, borderColor: t.border,
+              ...SHADOW.sm,
+            }}>
+              <SettingRow icon="bell" label="Notificaciones" value="Configurar"
+                onPress={() => navigation.navigate('ComingSoon', { feature: 'Notificaciones' })} t={t} />
+              <SettingRow icon="cart" label="Mi supermercado" value="Configurar"
+                onPress={() => navigation.navigate('ComingSoon', { feature: 'Supermercado favorito' })} t={t} />
+              <SettingRow icon="sparkle" label="Premium" value={u.isPremium ? 'Activo' : 'Probar ahora'}
+                onPress={() => { if (!u.isPremium) setShowPaywall(true); }} t={t} />
+              <SettingRow icon="log-out" label="Cerrar sesión" value="" onPress={() => {
+                Alert.alert('Cerrar sesión', '¿Estás seguro?', [
+                  { text: 'Cancelar', style: 'cancel' },
+                  { text: 'Cerrar sesión', style: 'destructive', onPress: logout },
+                ]);
+              }} t={t} last />
+            </View>
+          </View>
         </View>
 
-        <View style={{ paddingHorizontal: 22, marginTop: 14 }}>
-          <Section t={t} title="Nutrición y dieta">
-            <SettingRow icon="leaf" label="Dieta" value="Sin restricciones" onPress={() => openSheet('diet')} t={t} last />
-          </Section>
-        </View>
-
-        <View style={{ paddingHorizontal: 22, marginTop: 14 }}>
-          <Section t={t} title="Entrenamiento">
-            <SettingRow icon="dumbbell" label="Plan semanal" value={workoutPlans.length > 0 ? 'Activo' : 'Sin plan'}
-              onPress={() => navigation.navigate('Workout')} t={t} />
-            <SettingRow icon="weight" label="Marcas personales" value={`${totalPrs} registradas`}
-              onPress={() => navigation.navigate('Prs')} t={t} last />
-          </Section>
-        </View>
-
-        <View style={{ paddingHorizontal: 22, marginTop: 14 }}>
-          <Section t={t} title="Apariencia">
-            <SettingRow icon={t.isDark ? 'sun' : 'moon'} label="Tema oscuro" value={t.isDark ? 'Activado' : 'Desactivado'}
-              onPress={t.toggleTheme} t={t} last />
-          </Section>
-        </View>
-
-        <View style={{ paddingHorizontal: 22, marginTop: 14 }}>
-          <Section t={t} title="Cuenta">
-            <SettingRow icon="bell" label="Notificaciones" value="Configurar"
-              onPress={() => navigation.navigate('ComingSoon', { feature: 'Notificaciones' })} t={t} />
-            <SettingRow icon="cart" label="Mi supermercado" value="Configurar"
-              onPress={() => navigation.navigate('ComingSoon', { feature: 'Supermercado favorito' })} t={t} />
-            <SettingRow icon="shield" label="Privacidad" value=""
-              onPress={() => navigation.navigate('ComingSoon', { feature: 'Privacidad' })} t={t} />
-            <SettingRow icon="sparkle" label="Premium" value={u.isPremium ? 'Activo' : 'Probar ahora'}
-              onPress={() => { if (!u.isPremium) setShowPaywall(true); }} t={t} />
-            <SettingRow icon="user" label="Cerrar sesión" value="" onPress={() => {
-              Alert.alert('Cerrar sesión', '¿Estás seguro?', [
-                { text: 'Cancelar', style: 'cancel' },
-                { text: 'Cerrar sesión', style: 'destructive', onPress: logout },
-              ]);
-            }} t={t} last />
-          </Section>
-        </View>
-
-        {/* ── Footer ────────────────────────────────────────────── */}
-        <View style={{ alignItems: 'center', marginTop: 28, gap: 4 }}>
+        {/* ══════════════════════════════════════════════════════════
+            FOOTER
+           ══════════════════════════════════════════════════════════ */}
+        <View style={{ alignItems: 'center', marginTop: 36, gap: 8, paddingHorizontal: 20 }}>
+          <View style={{ width: 32, height: 1, backgroundColor: t.border, opacity: 0.5 }} />
           <Text style={{ fontFamily: MONO, fontSize: 10, color: t.muted, letterSpacing: 1 }}>
             COACHFOOD · v0.5.0 · ALPHA
           </Text>
           <TouchableOpacity onPress={() => navigation.navigate('ComingSoon', { feature: 'Eliminar cuenta' })}>
-            <Text style={{ fontFamily: MONO, fontSize: 9, color: t.muted, opacity: 0.5, letterSpacing: 0.5 }}>
+            <Text style={{ fontFamily: MONO, fontSize: 9, color: t.muted, opacity: 0.4, letterSpacing: 0.5 }}>
               ELIMINAR CUENTA
             </Text>
           </TouchableOpacity>
@@ -401,7 +508,7 @@ export default function ProfileScreen({ navigation }) {
       </Sheet>
 
       {/* Name editor */}
-      <Sheet visible={sheet === 'name'} onClose={closeSheet} title="Editar nombre">
+      <CenterModal visible={sheet === 'name'} onClose={closeSheet} title="Editar nombre">
         <TextInput
           value={editValue || u.name}
           onChangeText={setEditValue}
@@ -409,24 +516,24 @@ export default function ProfileScreen({ navigation }) {
           placeholderTextColor={t.muted}
           autoFocus
           style={{
-            backgroundColor: t.surface, borderWidth: 1, borderColor: t.border,
-            borderRadius: 12, padding: 14, fontSize: 17, color: t.fg, marginBottom: 16,
+            backgroundColor: t.bg, borderWidth: 1, borderColor: t.border,
+            borderRadius: 14, padding: 16, fontSize: 17, color: t.fg, marginBottom: 16,
           }}
         />
         <TouchableOpacity onPress={handleSaveName} style={{
-          height: 50, borderRadius: 999, backgroundColor: t.accent,
+          height: 52, borderRadius: 999, backgroundColor: t.accent,
           alignItems: 'center', justifyContent: 'center',
         }}>
-          <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>Guardar</Text>
+          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Guardar</Text>
         </TouchableOpacity>
-      </Sheet>
+      </CenterModal>
 
       {/* Number input modals */}
       {['weight', 'target', 'height', 'age'].map(field => {
         const labels = { weight: 'Peso (kg)', target: 'Peso objetivo (kg)', height: 'Altura (cm)', age: 'Edad' };
         const maxValues = { weight: 300, target: 300, height: 250, age: 120 };
         return (
-          <Sheet key={field} visible={sheet === field} onClose={closeSheet} title={labels[field]}>
+          <CenterModal key={field} visible={sheet === field} onClose={closeSheet} title={labels[field]}>
             <TextInput
               value={editValue}
               onChangeText={setEditValue}
@@ -435,8 +542,8 @@ export default function ProfileScreen({ navigation }) {
               placeholderTextColor={t.muted}
               autoFocus
               style={{
-                backgroundColor: t.surface, borderWidth: 1, borderColor: t.border,
-                borderRadius: 12, padding: 14, fontSize: 24, color: t.fg, textAlign: 'center', marginBottom: 16,
+                backgroundColor: t.bg, borderWidth: 1, borderColor: t.border,
+                borderRadius: 14, padding: 16, fontSize: 26, color: t.fg, textAlign: 'center', marginBottom: 16,
               }}
             />
             <TouchableOpacity onPress={() => {
@@ -445,50 +552,30 @@ export default function ProfileScreen({ navigation }) {
               if (field === 'weight') { logWeight(v); closeSheet(); }
               else { updateUser({ [field]: v }); closeSheet(); }
             }} style={{
-              height: 50, borderRadius: 999, backgroundColor: t.accent,
+              height: 52, borderRadius: 999, backgroundColor: t.accent,
               alignItems: 'center', justifyContent: 'center',
             }}>
-              <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>Guardar</Text>
+              <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Guardar</Text>
             </TouchableOpacity>
-          </Sheet>
+          </CenterModal>
         );
       })}
-    </SafeAreaView>
-  );
-}
-
-// ── Sub-components ──────────────────────────────────────────────
-function Section({ t, title, children }) {
-  return (
-    <View>
-      <Text style={{
-        fontSize: 13, color: t.muted, fontFamily: MONO, letterSpacing: 0.5,
-        textTransform: 'uppercase', marginBottom: 8, marginLeft: 4,
-      }}>
-        {title}
-      </Text>
-      <View style={{
-        backgroundColor: t.surface, borderRadius: 18, overflow: 'hidden',
-        borderWidth: 1, borderColor: t.border,
-        shadowColor: '#000', shadowOffset: { y: 1 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2,
-      }}>
-        {children}
-      </View>
     </View>
   );
 }
 
+// ── Sub-components ──────────────────────────────────────────────
 function SettingRow({ t, icon, label, value, onPress, last }) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={{
-      flexDirection: 'row', alignItems: 'center', gap: 14, padding: 15,
+      flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16,
       borderBottomWidth: last ? 0 : 1, borderColor: t.border,
     }}>
       <View style={{
-        width: 34, height: 34, borderRadius: 10, backgroundColor: t.chipBg,
+        width: 36, height: 36, borderRadius: 10, backgroundColor: t.chipBg,
         alignItems: 'center', justifyContent: 'center',
       }}>
-        <Icon name={icon} size={17} color={t.fg} />
+        <Icon name={icon} size={18} color={t.fg} />
       </View>
       <Text style={{ flex: 1, fontSize: 15, color: t.fg }}>{label}</Text>
       {value ? (
