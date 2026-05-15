@@ -31,7 +31,10 @@
       "PowerShell([System.Environment]::SetEnvironmentVariable\\(\"ANDROID_HOME\", \"C:\\\\Users\\\\FDCV\\\\AppData\\\\Local\\\\Android\\\\Sdk\", \"User\"\\); Write-Output \"ANDROID_HOME set to: $\\([System.Environment]::GetEnvironmentVariable\\('ANDROID_HOME', 'User'\\)\\)\")",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\FDCV\\\\Documents\\\\coachFood\" -Recurse -Directory)",
       "Bash(Select-Object -ExpandProperty FullName)",
-      "Bash(Sort-Object)"
+      "Bash(Sort-Object)",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); deps={**d.get\\('dependencies',{}\\), **d.get\\('devDependencies',{}\\)}; [print\\(k,v\\) for k,v in deps.items\\(\\) if any\\(x in k for x in ['status','bar','safe','navigation','gesture','reanimated','expo']\\)]\")",
+      "Bash(node -e ' *)",
+      "Bash(npx eas-cli *)"
     ]
   }
 }

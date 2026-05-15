@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Alert, useWindowDimensions, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Alert, useWindowDimensions, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Line, Polyline } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -36,7 +36,7 @@ function CenterModal({ visible, onClose, title, children }) {
   const t = useTheme();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <TouchableOpacity activeOpacity={1} onPress={onClose} style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <TouchableOpacity activeOpacity={1} onPress={() => {}} style={{
             backgroundColor: t.surface, borderRadius: 24, padding: 24,
@@ -567,21 +567,25 @@ export default function ProfileScreen({ navigation }) {
 // ── Sub-components ──────────────────────────────────────────────
 function SettingRow({ t, icon, label, value, onPress, last }) {
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={{
-      flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16,
-      borderBottomWidth: last ? 0 : 1, borderColor: t.border,
-    }}>
+    <Pressable
+      onPress={onPress}
+      android_ripple={{ color: t.border }}
+      style={({ pressed }) => ({
+        flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16,
+        borderBottomWidth: last ? 0 : 1, borderColor: t.border,
+        opacity: Platform.OS === 'ios' && pressed ? 0.7 : 1,
+      })}>
       <View style={{
         width: 36, height: 36, borderRadius: 10, backgroundColor: t.chipBg,
         alignItems: 'center', justifyContent: 'center',
       }}>
         <Icon name={icon} size={18} color={t.fg} />
       </View>
-      <Text style={{ flex: 1, fontSize: 15, color: t.fg }}>{label}</Text>
+      <Text allowFontScaling={false} style={{ flex: 1, fontSize: 15, color: t.fg }}>{label}</Text>
       {value ? (
-        <Text style={{ fontSize: 13, color: t.accent, fontWeight: '500' }}>{value}</Text>
+        <Text allowFontScaling={false} style={{ fontSize: 13, color: t.accent, fontWeight: '500' }}>{value}</Text>
       ) : null}
       <Icon name="chevron" size={16} color={t.muted} />
-    </TouchableOpacity>
+    </Pressable>
   );
 }

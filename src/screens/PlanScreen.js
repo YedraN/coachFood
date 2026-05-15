@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Pressable, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   useTheme, useTabSafeBottom, Eyebrow, H1, Card, Ring, FoodPlaceholder, Icon, PrimaryButton, GhostButton,
@@ -80,18 +80,23 @@ export default function PlanScreen({ navigation }) {
                   <Eyebrow style={{ marginBottom: 10 }}>{tag}</Eyebrow>
                   <View style={{ gap: 10 }}>
                     {recipes.map(r => (
-                      <TouchableOpacity key={r.id} onPress={() => navigation.navigate('RecipeDetail', { id: r.id })} activeOpacity={0.8}>
-                        <Card padded={false} style={{ flexDirection: 'row', alignItems: 'center', padding: 14, gap: 14 }}>
-                          <FoodPlaceholder hue={r.img?.hue || 18} height={60} style={{ width: 60, borderRadius: 12 }} />
-                          <View style={{ flex: 1 }}>
-                            <Text style={{ fontSize: 15, color: t.fg }} numberOfLines={1}>{r.title}</Text>
-                            <Text style={{ fontSize: 11, color: t.muted, marginTop: 3, fontFamily: MONO }}>
-                              {r.kcal} kcal · {r.p}g prot · {r.time} min
-                            </Text>
-                          </View>
-                          <Icon name="chevron" size={16} color={t.muted} />
-                        </Card>
-                      </TouchableOpacity>
+                      <View key={r.id} style={{ borderRadius: 20, overflow: 'hidden' }}>
+                        <Pressable
+                          onPress={() => navigation.navigate('RecipeDetail', { id: r.id })}
+                          android_ripple={{ color: t.border }}
+                          style={({ pressed }) => ({ opacity: Platform.OS === 'ios' && pressed ? 0.8 : 1 })}>
+                          <Card padded={false} style={{ flexDirection: 'row', alignItems: 'center', padding: 14, gap: 14 }}>
+                            <FoodPlaceholder hue={r.img?.hue || 18} height={60} style={{ width: 60, borderRadius: 12 }} />
+                            <View style={{ flex: 1 }}>
+                              <Text allowFontScaling={false} style={{ fontSize: 15, color: t.fg }} numberOfLines={1}>{r.title}</Text>
+                              <Text allowFontScaling={false} style={{ fontSize: 11, color: t.muted, marginTop: 3, fontFamily: MONO }}>
+                                {r.kcal} kcal · {r.p}g prot · {r.time} min
+                              </Text>
+                            </View>
+                            <Icon name="chevron" size={16} color={t.muted} />
+                          </Card>
+                        </Pressable>
+                      </View>
                     ))}
                   </View>
                 </View>

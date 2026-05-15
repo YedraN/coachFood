@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Pressable, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   useTheme, useTabSafeBottom, Eyebrow, H1, Card, FoodPlaceholder,
@@ -72,22 +72,26 @@ export default function WorkoutScreen({ navigation }) {
             const w = currentPlan.find(p => p.day_of_week === i);
             const isToday = i === todayDayIndex;
             return (
-              <TouchableOpacity key={d} onPress={() => {
-                if (w) navigation.navigate('Exercise', { planId: w.id, day: i });
-              }} style={{
-                minWidth: 54, paddingVertical: 10, borderRadius: 14,
-                backgroundColor: isToday ? t.fg : (w?.done ? t.accentSoft : t.surface),
-                borderWidth: 1, borderColor: isToday ? t.fg : (w?.done ? t.accent + '33' : t.border),
-                alignItems: 'center',
-              }}>
-                <Text style={{ fontFamily: MONO, fontSize: 9, letterSpacing: 1, color: isToday ? t.bg : t.muted }}>
-                  {d.toUpperCase()}
-                </Text>
-                <Text style={{ fontSize: 20, color: isToday ? t.bg : t.fg, marginTop: 4 }}>{10 + i}</Text>
-                {(w?.done || isToday) && (
-                  <View style={{ marginTop: 4, width: 5, height: 5, borderRadius: 999, backgroundColor: isToday ? t.bg : t.accent }} />
-                )}
-              </TouchableOpacity>
+              <View key={d} style={{ borderRadius: 14, overflow: 'hidden' }}>
+                <Pressable
+                  onPress={() => { if (w) navigation.navigate('Exercise', { planId: w.id, day: i }); }}
+                  android_ripple={{ color: isToday ? 'rgba(255,255,255,0.2)' : t.border }}
+                  style={({ pressed }) => ({
+                    minWidth: 54, paddingVertical: 10, borderRadius: 14,
+                    backgroundColor: isToday ? t.fg : (w?.done ? t.accentSoft : t.surface),
+                    borderWidth: 1, borderColor: isToday ? t.fg : (w?.done ? t.accent + '33' : t.border),
+                    alignItems: 'center',
+                    opacity: Platform.OS === 'ios' && pressed ? 0.7 : 1,
+                  })}>
+                  <Text allowFontScaling={false} style={{ fontFamily: MONO, fontSize: 9, letterSpacing: 1, color: isToday ? t.bg : t.muted }}>
+                    {d.toUpperCase()}
+                  </Text>
+                  <Text allowFontScaling={false} style={{ fontSize: 20, color: isToday ? t.bg : t.fg, marginTop: 4 }}>{10 + i}</Text>
+                  {(w?.done || isToday) && (
+                    <View style={{ marginTop: 4, width: 5, height: 5, borderRadius: 999, backgroundColor: isToday ? t.bg : t.accent }} />
+                  )}
+                </Pressable>
+              </View>
             );
           })}
         </ScrollView>
@@ -158,27 +162,32 @@ export default function WorkoutScreen({ navigation }) {
               const isToday = i === todayDayIndex;
               if (!w) return null;
               return (
-                <TouchableOpacity key={d} onPress={() => navigation.navigate('Exercise', { planId: w.id })}
-                  style={{
-                    flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16,
-                    backgroundColor: isToday ? t.accentSoft : t.surface,
-                    borderWidth: 1, borderColor: isToday ? t.accent + '55' : t.border,
-                    borderRadius: 14,
-                  }}>
-                  <View style={{
-                    width: 44, height: 44, borderRadius: 999,
-                    backgroundColor: isToday ? t.accent : t.fg,
-                    alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <Icon name="dumbbell" size={20} color={isToday ? '#fff' : t.bg} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 16, color: t.fg }}>{w.name}</Text>
-                    <Text style={{ fontSize: 12, color: t.muted, marginTop: 3 }}>{d} · {w.focus}</Text>
-                  </View>
-                  <Text style={{ fontFamily: MONO, fontSize: 11, color: t.muted }}>{w.duration}min</Text>
-                  {w.done && <Text style={{ fontSize: 10, color: t.accent, letterSpacing: 0.5 }}>✓</Text>}
-                </TouchableOpacity>
+                <View key={d} style={{ borderRadius: 14, overflow: 'hidden' }}>
+                  <Pressable
+                    onPress={() => navigation.navigate('Exercise', { planId: w.id })}
+                    android_ripple={{ color: isToday ? t.accent + '33' : t.border }}
+                    style={({ pressed }) => ({
+                      flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16,
+                      backgroundColor: isToday ? t.accentSoft : t.surface,
+                      borderWidth: 1, borderColor: isToday ? t.accent + '55' : t.border,
+                      borderRadius: 14,
+                      opacity: Platform.OS === 'ios' && pressed ? 0.7 : 1,
+                    })}>
+                    <View style={{
+                      width: 44, height: 44, borderRadius: 999,
+                      backgroundColor: isToday ? t.accent : t.fg,
+                      alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Icon name="dumbbell" size={20} color={isToday ? '#fff' : t.bg} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text allowFontScaling={false} style={{ fontSize: 16, color: t.fg }}>{w.name}</Text>
+                      <Text allowFontScaling={false} style={{ fontSize: 12, color: t.muted, marginTop: 3 }}>{d} · {w.focus}</Text>
+                    </View>
+                    <Text allowFontScaling={false} style={{ fontFamily: MONO, fontSize: 11, color: t.muted }}>{w.duration}min</Text>
+                    {w.done && <Text allowFontScaling={false} style={{ fontSize: 10, color: t.accent, letterSpacing: 0.5 }}>✓</Text>}
+                  </Pressable>
+                </View>
               );
             })}
           </View>

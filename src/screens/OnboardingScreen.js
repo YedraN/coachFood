@@ -48,7 +48,7 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         {/* Header: back-to-login + progress bar */}
         <View style={{ paddingTop: 16, paddingHorizontal: 22 }}>
           <TouchableOpacity onPress={logout} style={{ alignSelf: 'flex-start', marginBottom: 12 }}>

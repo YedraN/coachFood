@@ -1,10 +1,12 @@
 import React from 'react';
-import { View, ActivityIndicator, Text, TouchableOpacity, Platform } from 'react-native';
+import { View, Pressable, Platform } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { GlassView, isLiquidGlassAvailable, isGlassEffectAPIAvailable } from 'expo-glass-effect';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ActivityIndicator } from 'react-native';
 
 import { useTheme, Icon, SHADOW } from '../components/ui';
 import { useApp } from '../context/AppContext';
@@ -36,7 +38,7 @@ const TAB_ITEMS = [
 ];
 
 function TabBarInner({ state, navigation }) {
-  const t      = useTheme();
+  const t = useTheme();
 
   return (
     <View style={{
@@ -46,16 +48,15 @@ function TabBarInner({ state, navigation }) {
       {TAB_ITEMS.map((tab, index) => {
         const isFocused = state.index === index;
         return (
-          <TouchableOpacity
+          <Pressable
             key={tab.name}
             onPress={() => { if (!isFocused) navigation.navigate(tab.name); }}
-            activeOpacity={0.7}
-            style={{
-              flex: 1, height: 56, alignItems: 'center', justifyContent: 'center', gap: 4,
-            }}
+            android_ripple={{ color: t.accent + '30', borderless: true, radius: 30 }}
+            style={{ flex: 1, height: 56, alignItems: 'center', justifyContent: 'center', gap: 4 }}
           >
             <View style={{
               width: isFocused ? 48 : 38, height: isFocused ? 48 : 38, borderRadius: 999,
+              overflow: 'hidden',
               backgroundColor: isFocused ? t.accent : 'transparent',
               alignItems: 'center', justifyContent: 'center',
             }}>
@@ -69,7 +70,7 @@ function TabBarInner({ state, navigation }) {
             {isFocused && (
               <View style={{ width: 5, height: 5, borderRadius: 999, backgroundColor: t.accent }} />
             )}
-          </TouchableOpacity>
+          </Pressable>
         );
       })}
     </View>
@@ -105,10 +106,12 @@ function CustomTabBar({ state, navigation }) {
           </GlassView>
         ) : (
           <View style={{
-            backgroundColor: t.surface + '99',
+            backgroundColor: Platform.OS === 'android'
+              ? (t.isDark ? t.surface : t.bg)
+              : t.surface + 'EE',
             borderRadius: 36,
-            borderWidth: Platform.OS === 'android' ? 1 : 1,
-            borderColor: t.border + '50',
+            borderWidth: 1,
+            borderColor: t.border,
           }}>
             <TabBarInner state={state} navigation={navigation} />
           </View>
@@ -140,6 +143,7 @@ export default function AppNavigator() {
   if (!ready) {
     return (
       <View style={{ flex: 1, backgroundColor: t.bg, alignItems: 'center', justifyContent: 'center' }}>
+        <StatusBar style={t.isDark ? 'light' : 'dark'} />
         <ActivityIndicator size="large" color={t.accent} />
       </View>
     );
@@ -147,6 +151,7 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer>
+      <StatusBar style={t.isDark ? 'light' : 'dark'} />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!session ? (
           <Stack.Screen name="Auth" component={AuthScreen} />
