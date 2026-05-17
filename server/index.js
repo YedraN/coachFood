@@ -204,7 +204,7 @@ Responde SOLO con un JSON válido (sin markdown, sin explicaciones) con este for
 
 REGLAS: Usa SOLO ingredientes de la lista. Genera exactamente 3 recetas diferentes.`;
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
     const result = await model.generateContent(prompt);
     const text = result.response.text();
     if (!text) {
