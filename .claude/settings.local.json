@@ -34,7 +34,10 @@
       "Bash(Sort-Object)",
       "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); deps={**d.get\\('dependencies',{}\\), **d.get\\('devDependencies',{}\\)}; [print\\(k,v\\) for k,v in deps.items\\(\\) if any\\(x in k for x in ['status','bar','safe','navigation','gesture','reanimated','expo']\\)]\")",
       "Bash(node -e ' *)",
-      "Bash(npx eas-cli *)"
+      "Bash(npx eas-cli *)",
+      "Bash(Get-Content \"C:\\\\Users\\\\juanj\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-juanj-Documents-appComidas-appComidas\\\\14b67bae-9dc6-4557-b16f-74f4fad9bfd6\\\\tasks\\\\brvt1j11x.output\" -Wait)",
+      "Bash(Select-String -Pattern \".\")",
+      "Bash(Get-Content *)"
     ]
   }
 }

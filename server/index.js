@@ -23,6 +23,7 @@ process.on('unhandledRejection', (reason) => { console.error('Unhandled Rejectio
 process.on('uncaughtException', (err) => { console.error('Uncaught Exception:', err); });
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
