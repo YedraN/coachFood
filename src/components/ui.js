@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, Platform, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path, Rect, Polyline } from 'react-native-svg';
@@ -11,9 +11,9 @@ export const useTheme = () => React.useContext(ThemeCtx);
 
 // ─── Shadow helper (cross-platform) ──────────────────────────
 export const SHADOW = {
-  sm:   { shadowColor: '#000', shadowOffset: { y: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
-  md:   { shadowColor: '#000', shadowOffset: { y: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3 },
-  lg:   { shadowColor: '#000', shadowOffset: { y: 4 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 5 },
+  sm: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4,  elevation: 2 },
+  md: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8,  elevation: 4 },
+  lg: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 10 },
 };
 
 // ─── Tab-bar-aware bottom padding ────────────────────────────
@@ -52,7 +52,7 @@ export function Eyebrow({ children, color }) {
 export function H1({ children, style }) {
   const t = useTheme();
   return (
-    <Text allowFontScaling={false} style={[{ fontSize: 36, lineHeight: 40, color: t.fg, fontWeight: '400' }, style]}>
+    <Text allowFontScaling={false} style={[{ fontSize: 34, lineHeight: 40, color: t.fg, fontWeight: '400' }, style]}>
       {children}
     </Text>
   );
@@ -61,7 +61,7 @@ export function H1({ children, style }) {
 export function H2({ children, style }) {
   const t = useTheme();
   return (
-    <Text allowFontScaling={false} style={[{ fontSize: 26, lineHeight: 30, color: t.fg, fontWeight: '400' }, style]}>
+    <Text allowFontScaling={false} style={[{ fontSize: 24, lineHeight: 30, color: t.fg, fontWeight: '400' }, style]}>
       {children}
     </Text>
   );
@@ -70,7 +70,7 @@ export function H2({ children, style }) {
 export function H3({ children, style }) {
   const t = useTheme();
   return (
-    <Text allowFontScaling={false} style={[{ fontSize: 20, lineHeight: 24, color: t.fg, fontWeight: '400' }, style]}>
+    <Text allowFontScaling={false} style={[{ fontSize: 18, lineHeight: 24, color: t.fg, fontWeight: '600' }, style]}>
       {children}
     </Text>
   );
@@ -79,57 +79,88 @@ export function H3({ children, style }) {
 // ─── Card surface ─────────────────────────────────────────────
 export function Card({ children, style, onPress, padded = true }) {
   const t = useTheme();
-  const inner = (
-    <View style={[{
-      backgroundColor: t.surface,
-      borderWidth: 1, borderColor: t.border,
-      borderRadius: 20,
-      padding: padded ? 20 : 0,
-      overflow: 'hidden',
-      ...SHADOW.md,
-    }, style]}>
+  const baseStyle = {
+    backgroundColor: t.surface,
+    borderWidth: 1, borderColor: t.border,
+    borderRadius: 20,
+    overflow: 'hidden',
+    ...SHADOW.md,
+  };
+
+  if (onPress) {
+    return (
+      <View style={[baseStyle, style]}>
+        <Pressable
+          onPress={onPress}
+          android_ripple={{ color: t.border }}
+          style={({ pressed }) => ({
+            padding: padded ? 20 : 0,
+            opacity: Platform.OS === 'ios' && pressed ? 0.8 : 1,
+          })}>
+          {children}
+        </Pressable>
+      </View>
+    );
+  }
+  return (
+    <View style={[{ ...baseStyle, padding: padded ? 20 : 0 }, style]}>
       {children}
     </View>
   );
-  if (onPress) return <TouchableOpacity onPress={onPress} activeOpacity={0.8}>{inner}</TouchableOpacity>;
-  return inner;
 }
 
 // ─── Buttons ──────────────────────────────────────────────────
 export function PrimaryButton({ children, onPress, icon, style, disabled }) {
   const t = useTheme();
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.85} disabled={disabled}
-      style={[{
-        height: 54, backgroundColor: disabled ? t.muted : t.accent,
-        borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-        flexDirection: 'row', gap: 8,
-        ...SHADOW.sm,
-      }, style]}>
-      {icon && <Icon name={icon} size={18} color="#fffdf7" strokeWidth={2} />}
-      <Text style={{ color: '#fffdf7', fontSize: 15, fontWeight: '600', letterSpacing: -0.1 }}>
-        {children}
-      </Text>
-    </TouchableOpacity>
+    <View style={[{ borderRadius: 999, overflow: 'hidden', ...SHADOW.sm }, style]}>
+      <Pressable
+        onPress={onPress}
+        disabled={disabled}
+        android_ripple={{ color: 'rgba(255,255,255,0.25)' }}
+        style={({ pressed }) => ({
+          height: 54,
+          backgroundColor: disabled ? t.muted : t.accent,
+          borderRadius: 999,
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'row',
+          gap: 8,
+          opacity: Platform.OS === 'ios' && pressed ? 0.85 : 1,
+        })}>
+        {icon && <Icon name={icon} size={18} color="#fffdf7" strokeWidth={2} />}
+        <Text allowFontScaling={false} style={{ color: '#fffdf7', fontSize: 15, fontWeight: '600', letterSpacing: -0.1 }}>
+          {children}
+        </Text>
+      </Pressable>
+    </View>
   );
 }
 
 export function GhostButton({ children, onPress, icon, full = false, style }) {
   const t = useTheme();
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={[{
-      height: 48,
-      width: full ? '100%' : undefined,
-      paddingHorizontal: 20,
-      borderRadius: 999,
+    <View style={[{
+      borderRadius: 999, overflow: 'hidden',
       borderWidth: 1, borderColor: t.border2,
-      alignItems: 'center', justifyContent: 'center',
-      flexDirection: 'row', gap: 8,
-      backgroundColor: 'transparent',
-    }, style]}>
-      {icon && <Icon name={icon} size={16} color={t.fg} />}
-      <Text style={{ color: t.fg, fontSize: 14, fontWeight: '500' }}>{children}</Text>
-    </TouchableOpacity>
+    }, full ? { width: '100%' } : undefined, style]}>
+      <Pressable
+        onPress={onPress}
+        android_ripple={{ color: t.border }}
+        style={({ pressed }) => ({
+          height: 48,
+          paddingHorizontal: 20,
+          borderRadius: 999,
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'row',
+          gap: 8,
+          opacity: Platform.OS === 'ios' && pressed ? 0.8 : 1,
+        })}>
+        {icon && <Icon name={icon} size={16} color={t.fg} />}
+        <Text allowFontScaling={false} style={{ color: t.fg, fontSize: 14, fontWeight: '500' }}>{children}</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -137,15 +168,24 @@ export function GhostButton({ children, onPress, icon, full = false, style }) {
 export function Chip({ children, active, onPress }) {
   const t = useTheme();
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.75} style={{
-      height: 36, paddingHorizontal: 18, borderRadius: 999,
-      backgroundColor: active ? t.fg : t.chipBg,
-      alignItems: 'center', justifyContent: 'center',
-    }}>
-      <Text style={{ color: active ? t.surface : t.fg, fontSize: 13, fontWeight: '500', letterSpacing: -0.1 }}>
-        {children}
-      </Text>
-    </TouchableOpacity>
+    <View style={{ borderRadius: 999, overflow: 'hidden' }}>
+      <Pressable
+        onPress={onPress}
+        android_ripple={{ color: active ? 'rgba(255,255,255,0.25)' : t.border }}
+        style={({ pressed }) => ({
+          height: 36,
+          paddingHorizontal: 18,
+          borderRadius: 999,
+          backgroundColor: active ? t.fg : t.chipBg,
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: Platform.OS === 'ios' && pressed ? 0.75 : 1,
+        })}>
+        <Text allowFontScaling={false} style={{ color: active ? t.surface : t.fg, fontSize: 13, fontWeight: '500', letterSpacing: -0.1 }}>
+          {children}
+        </Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -218,14 +258,18 @@ export function MacroBar({ p, c, f, compact }) {
 export function IconButton({ icon, onPress, active, size = 40 }) {
   const t = useTheme();
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.75} style={{
-      width: size, height: size, borderRadius: 999,
+    <View style={{
+      width: size, height: size, borderRadius: 999, overflow: 'hidden',
       backgroundColor: active ? t.accent : t.surface,
       borderWidth: 1, borderColor: active ? t.accent : t.border,
-      alignItems: 'center', justifyContent: 'center',
     }}>
-      <Icon name={icon} size={18} color={active ? '#fff' : t.fg} />
-    </TouchableOpacity>
+      <Pressable
+        onPress={onPress}
+        android_ripple={{ color: active ? 'rgba(255,255,255,0.3)' : t.border, borderless: true }}
+        style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+        <Icon name={icon} size={18} color={active ? '#fff' : t.fg} />
+      </Pressable>
+    </View>
   );
 }
 
@@ -256,10 +300,16 @@ export function SectionHeader({ title, action, onAction }) {
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
       <H3>{title}</H3>
       {action && (
-        <TouchableOpacity onPress={onAction} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-          <Text style={{ color: t.accent, fontSize: 13, fontWeight: '600' }}>{action}</Text>
+        <Pressable
+          onPress={onAction}
+          android_ripple={{ color: t.accentSoft, borderless: true }}
+          style={({ pressed }) => ({
+            flexDirection: 'row', alignItems: 'center', gap: 4,
+            opacity: Platform.OS === 'ios' && pressed ? 0.6 : 1,
+          })}>
+          <Text allowFontScaling={false} style={{ color: t.accent, fontSize: 13, fontWeight: '600' }}>{action}</Text>
           <Icon name="chevron" size={16} color={t.accent} />
-        </TouchableOpacity>
+        </Pressable>
       )}
     </View>
   );

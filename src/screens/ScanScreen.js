@@ -23,6 +23,12 @@ const CAT_FROM_TAGS = (tags = []) => {
 
 const CAT_EMOJI = { protein: '🥩', dairy: '🥛', veg: '🥦', grain: '🌾', fruit: '🍎', pantry: '🥫' };
 
+const UNIT_CONFIG = {
+  g:  { step: 50,   min: 10,   max: 2000, presets: [50, 100, 150, 200, 300],   defaultVal: 100 },
+  ml: { step: 50,   min: 50,   max: 2000, presets: [100, 200, 250, 500, 1000], defaultVal: 200 },
+  L:  { step: 0.25, min: 0.25, max: 5,    presets: [0.25, 0.5, 1, 2],          defaultVal: 1   },
+};
+
 async function fetchProduct(barcode) {
   try {
     const res  = await fetch(`https://world.openfoodfacts.org/api/v3/product/${barcode}.json`);
@@ -55,6 +61,7 @@ export default function ScanScreen({ navigation }) {
   const [phase, setPhase]     = useState('idle');
   const [product, setProduct] = useState(null);
   const [grams, setGrams]     = useState(100);
+  const [unit, setUnit]       = useState('g');
   const [torch, setTorch]     = useState(false);
   const scannedRef            = useRef(false);
 
@@ -77,6 +84,7 @@ export default function ScanScreen({ navigation }) {
     if (prod) {
       setProduct(prod);
       setGrams(100);
+      setUnit('g');
       setPhase('found');
     } else {
       setPhase('notfound');
@@ -84,13 +92,15 @@ export default function ScanScreen({ navigation }) {
   };
 
   const handleAdd = () => {
-    const ratio = grams / 100;
+    const amountInG = unit === 'L' ? grams * 1000 : grams;
+    const ratio = amountInG / 100;
+    const displayAmt = unit === 'L' ? +grams.toFixed(2) : grams;
     addToPantry({
       id:      Date.now().toString(),
       barcode: product.barcode,
       name:    product.name,
       brand:   product.brand,
-      qty:     `${grams} g`,
+      qty:     `${displayAmt} ${unit}`,
       cat:     product.cat,
       emoji:   product.emoji,
       kcal:    Math.round(product.kcalPer100 * ratio),
@@ -130,7 +140,7 @@ export default function ScanScreen({ navigation }) {
       {phase === 'idle'     && <ScanIdle     t={t} onStart={startScan} hasPermission={permission?.granted} />}
       {phase === 'scanning' && <ScanCamera   t={t} torch={torch} setTorch={setTorch} onScanned={handleBarcodeScanned} />}
       {phase === 'loading'  && <ScanLoading  t={t} />}
-      {phase === 'found'    && <ScanFound    t={t} product={product} grams={grams} setGrams={setGrams} onAdd={handleAdd} onRetry={retry} />}
+      {phase === 'found'    && <ScanFound    t={t} product={product} grams={grams} setGrams={setGrams} unit={unit} setUnit={setUnit} onAdd={handleAdd} onRetry={retry} />}
       {phase === 'notfound' && <ScanNotFound t={t} onRetry={retry} onReset={reset} />}
     </SafeAreaView>
   );
@@ -254,12 +264,20 @@ function ScanLoading({ t }) {
   );
 }
 
-function ScanFound({ t, product, grams, setGrams, onAdd, onRetry }) {
-  const ratio    = grams / 100;
-  const kcal     = Math.round(product.kcalPer100 * ratio);
-  const protein  = (product.proteinPer100 * ratio).toFixed(1);
-  const carbs    = (product.carbsPer100   * ratio).toFixed(1);
-  const fat      = (product.fatPer100     * ratio).toFixed(1);
+function ScanFound({ t, product, grams, setGrams, unit, setUnit, onAdd, onRetry }) {
+  const cfg        = UNIT_CONFIG[unit];
+  const amountInG  = unit === 'L' ? grams * 1000 : grams;
+  const ratio      = amountInG / 100;
+  const kcal       = Math.round(product.kcalPer100 * ratio);
+  const protein    = (product.proteinPer100 * ratio).toFixed(1);
+  const carbs      = (product.carbsPer100   * ratio).toFixed(1);
+  const fat        = (product.fatPer100     * ratio).toFixed(1);
+  const displayAmt = unit === 'L' ? +grams.toFixed(2) : grams;
+
+  const handleUnitChange = (u) => {
+    setUnit(u);
+    setGrams(UNIT_CONFIG[u].defaultVal);
+  };
 
   return (
     <ScrollView contentContainerStyle={{ padding: 22, paddingBottom: 40 }}>
@@ -295,10 +313,27 @@ function ScanFound({ t, product, grams, setGrams, onAdd, onRetry }) {
         marginTop: 18, backgroundColor: t.surface, borderWidth: 1, borderColor: t.border,
         borderRadius: 16, padding: 18,
       }}>
-        <Eyebrow>Cantidad</Eyebrow>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Eyebrow>Cantidad</Eyebrow>
+          {/* Unit selector */}
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            {['g', 'ml', 'L'].map(u => (
+              <TouchableOpacity key={u} onPress={() => handleUnitChange(u)} style={{
+                paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999,
+                backgroundColor: unit === u ? t.fg : t.chipBg,
+                borderWidth: 1, borderColor: unit === u ? t.fg : t.border,
+              }}>
+                <Text style={{ fontSize: 12, color: unit === u ? t.bg : t.muted, fontFamily: MONO }}>
+                  {u}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
           <TouchableOpacity
-            onPress={() => setGrams(g => Math.max(10, g - 50))}
+            onPress={() => setGrams(g => Math.max(cfg.min, +(g - cfg.step).toFixed(2)))}
             style={{
               width: 44, height: 44, borderRadius: 999,
               borderWidth: 1, borderColor: t.border2, backgroundColor: t.bg,
@@ -308,11 +343,11 @@ function ScanFound({ t, product, grams, setGrams, onAdd, onRetry }) {
           </TouchableOpacity>
           <View style={{ flex: 1, alignItems: 'center' }}>
             <Text style={{ fontSize: 36, color: t.fg }}>
-              {grams}<Text style={{ fontSize: 18, color: t.muted }}> g</Text>
+              {displayAmt}<Text style={{ fontSize: 18, color: t.muted }}> {unit}</Text>
             </Text>
           </View>
           <TouchableOpacity
-            onPress={() => setGrams(g => Math.min(2000, g + 50))}
+            onPress={() => setGrams(g => Math.min(cfg.max, +(g + cfg.step).toFixed(2)))}
             style={{
               width: 44, height: 44, borderRadius: 999,
               backgroundColor: t.accent, alignItems: 'center', justifyContent: 'center',
@@ -321,17 +356,20 @@ function ScanFound({ t, product, grams, setGrams, onAdd, onRetry }) {
           </TouchableOpacity>
         </View>
         {/* Quick presets */}
-        <View style={{ flexDirection: 'row', gap: 10, marginTop: 14, justifyContent: 'center' }}>
-          {[50, 100, 150, 200, 300].map(g => (
-            <TouchableOpacity key={g} onPress={() => setGrams(g)} style={{
-              paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
-              backgroundColor: grams === g ? t.fg : t.chipBg,
-            }}>
-              <Text style={{ fontSize: 12, color: grams === g ? t.bg : t.muted, fontFamily: MONO }}>
-                {g}g
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <View style={{ flexDirection: 'row', gap: 8, marginTop: 14, justifyContent: 'center' }}>
+          {cfg.presets.map(val => {
+            const isActive = grams === val;
+            return (
+              <TouchableOpacity key={val} onPress={() => setGrams(val)} style={{
+                paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999,
+                backgroundColor: isActive ? t.fg : t.chipBg,
+              }}>
+                <Text style={{ fontSize: 12, color: isActive ? t.bg : t.muted, fontFamily: MONO }}>
+                  {unit === 'L' ? +val.toFixed(2) : val}{unit}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
 
@@ -340,7 +378,7 @@ function ScanFound({ t, product, grams, setGrams, onAdd, onRetry }) {
         marginTop: 14, backgroundColor: t.surface, borderWidth: 1, borderColor: t.border,
         borderRadius: 16, padding: 18,
       }}>
-        <Eyebrow>Macros para {grams} g</Eyebrow>
+        <Eyebrow>Macros para {displayAmt} {unit}</Eyebrow>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 }}>
           <MacroCol t={t} label="Kcal"     value={kcal}    color={t.accent} />
           <MacroCol t={t} label="Proteína" value={`${protein}g`} color="#c98a3a" />

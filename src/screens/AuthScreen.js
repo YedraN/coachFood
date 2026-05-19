@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
+  View, Text, TextInput, TouchableOpacity, Pressable,
   ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -98,7 +98,7 @@ export default function AuthScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
           contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: 40, paddingBottom: 32 }}
           keyboardShouldPersistTaps="handled"
@@ -127,22 +127,24 @@ export default function AuthScreen() {
             borderRadius: 16, padding: 4, marginBottom: 28,
           }}>
             {[['login', 'Entrar'], ['register', 'Registrarse']].map(([m, label]) => (
-              <TouchableOpacity
-                key={m}
-                onPress={() => { setMode(m); clear(); }}
-                style={{
-                  flex: 1, height: 44, borderRadius: 12,
-                  backgroundColor: mode === m ? t.surface : 'transparent',
-                  alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                <Text allowFontScaling={false} style={{
-                  fontSize: 15, fontWeight: '600',
-                  color: mode === m ? t.fg : t.muted,
-                }}>
-                  {label}
-                </Text>
-              </TouchableOpacity>
+              <View key={m} style={{ flex: 1, borderRadius: 12, overflow: 'hidden' }}>
+                <Pressable
+                  onPress={() => { setMode(m); clear(); }}
+                  android_ripple={{ color: t.border }}
+                  style={({ pressed }) => ({
+                    height: 44, borderRadius: 12,
+                    backgroundColor: mode === m ? t.surface : 'transparent',
+                    alignItems: 'center', justifyContent: 'center',
+                    opacity: Platform.OS === 'ios' && pressed ? 0.7 : 1,
+                  })}>
+                  <Text allowFontScaling={false} style={{
+                    fontSize: 15, fontWeight: '600',
+                    color: mode === m ? t.fg : t.muted,
+                  }}>
+                    {label}
+                  </Text>
+                </Pressable>
+              </View>
             ))}
           </View>
 
@@ -181,22 +183,24 @@ export default function AuthScreen() {
           )}
 
           {/* Primary button */}
-          <TouchableOpacity
-            onPress={handleEmailAuth}
-            disabled={loading}
-            activeOpacity={0.85}
-            style={{
-              marginTop: 20, height: 52, backgroundColor: t.accent,
-              borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            {loading
-              ? <ActivityIndicator color="#fff" />
-              : <Text allowFontScaling={false} style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>
-                  {mode === 'login' ? 'Entrar' : 'Crear cuenta'}
-                </Text>
-            }
-          </TouchableOpacity>
+          <View style={{ marginTop: 20, borderRadius: 999, overflow: 'hidden' }}>
+            <Pressable
+              onPress={handleEmailAuth}
+              disabled={loading}
+              android_ripple={{ color: 'rgba(255,255,255,0.25)' }}
+              style={({ pressed }) => ({
+                height: 52, backgroundColor: t.accent,
+                borderRadius: 999, alignItems: 'center', justifyContent: 'center',
+                opacity: Platform.OS === 'ios' && pressed ? 0.85 : 1,
+              })}>
+              {loading
+                ? <ActivityIndicator color="#fff" />
+                : <Text allowFontScaling={false} style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>
+                    {mode === 'login' ? 'Entrar' : 'Crear cuenta'}
+                  </Text>
+              }
+            </Pressable>
+          </View>
 
           {/* Forgot password */}
           {mode === 'login' && (
@@ -220,27 +224,27 @@ export default function AuthScreen() {
           </View>
 
           {/* Google button */}
-          <TouchableOpacity
-            onPress={handleGoogle}
-            disabled={googleLoading}
-            activeOpacity={0.85}
-            style={{
-              height: 52, borderRadius: 999,
-              borderWidth: 1, borderColor: t.border2,
-              backgroundColor: t.surface,
-              flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
-            }}
-          >
-            {googleLoading
-              ? <ActivityIndicator color={t.fg} />
-              : <>
-                  <GoogleG size={20} />
-                  <Text allowFontScaling={false} style={{ fontSize: 15, fontWeight: '600', color: t.fg }}>
-                    Continuar con Google
-                  </Text>
-                </>
-            }
-          </TouchableOpacity>
+          <View style={{ borderRadius: 999, overflow: 'hidden', borderWidth: 1, borderColor: t.border2, backgroundColor: t.surface }}>
+            <Pressable
+              onPress={handleGoogle}
+              disabled={googleLoading}
+              android_ripple={{ color: t.border }}
+              style={({ pressed }) => ({
+                height: 52, borderRadius: 999,
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+                opacity: Platform.OS === 'ios' && pressed ? 0.85 : 1,
+              })}>
+              {googleLoading
+                ? <ActivityIndicator color={t.fg} />
+                : <>
+                    <GoogleG size={20} />
+                    <Text allowFontScaling={false} style={{ fontSize: 15, fontWeight: '600', color: t.fg }}>
+                      Continuar con Google
+                    </Text>
+                  </>
+              }
+            </Pressable>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

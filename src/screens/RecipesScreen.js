@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Pressable, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   useTheme, useTabSafeBottom, Eyebrow, H1, H2, Card, Chip, FoodPlaceholder,
-  DataPoint, Divider, Icon, PrimaryButton,
+  DataPoint, Divider, Icon, PrimaryButton, SHADOW,
 } from '../components/ui';
 import PaywallModal from '../components/PaywallModal';
 import { useApp } from '../context/AppContext';
@@ -80,28 +80,31 @@ export default function RecipesScreen({ navigation }) {
         {/* Generar con IA button */}
         {pantry.length > 0 && (
           <View style={{ paddingHorizontal: 22, marginBottom: 16 }}>
-            <TouchableOpacity
-              onPress={handleGenerateAI}
-              disabled={generating}
-              activeOpacity={0.85}
-              style={{
-                backgroundColor: t.accent,
-                borderRadius: 18,
-                padding: 16,
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 14,
-              }}>
-              {generating ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Icon name="sparkle" size={20} color="#fff" strokeWidth={2} />
-              )}
-              <Text style={{ flex: 1, color: '#fff', fontSize: 15, fontWeight: '600' }}>
-                {generating ? 'Generando recetas...' : 'Generar con IA'}
-              </Text>
-              {!generating && <Icon name="chevron" size={16} color="#fff" />}
-            </TouchableOpacity>
+            <View style={{ borderRadius: 18, overflow: 'hidden' }}>
+              <Pressable
+                onPress={handleGenerateAI}
+                disabled={generating}
+                android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
+                style={({ pressed }) => ({
+                  backgroundColor: t.accent,
+                  borderRadius: 18,
+                  padding: 16,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 14,
+                  opacity: Platform.OS === 'ios' && pressed ? 0.85 : 1,
+                })}>
+                {generating ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Icon name="sparkle" size={20} color="#fff" strokeWidth={2} />
+                )}
+                <Text allowFontScaling={false} style={{ flex: 1, color: '#fff', fontSize: 15, fontWeight: '600' }}>
+                  {generating ? 'Generando recetas...' : 'Generar con IA'}
+                </Text>
+                {!generating && <Icon name="chevron" size={16} color="#fff" />}
+              </Pressable>
+            </View>
           </View>
         )}
 
@@ -194,37 +197,42 @@ function FeaturedRecipe({ t, recipe, onPress }) {
 
 function RecipeRow({ t, recipe, onPress, isAI }) {
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.85}>
-      <Card padded={false} style={{ flexDirection: 'row', overflow: 'hidden', position: 'relative' }}>
-        {isAI && (
-          <View style={{
-            position: 'absolute', top: 10, right: 10, zIndex: 10,
-            backgroundColor: t.accent, paddingHorizontal: 10, paddingVertical: 5,
-            borderRadius: 999,
-          }}>
-            <Text style={{ fontSize: 9, color: '#fff', fontFamily: MONO, fontWeight: '600' }}>
-              ✨ IA
-            </Text>
-          </View>
-        )}
-        <FoodPlaceholder hue={recipe.img?.hue || 18} height={120} style={{ width: 120 }} />
-        <View style={{ flex: 1, padding: 14, justifyContent: 'space-between' }}>
-          <View>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Eyebrow>{recipe.tag}</Eyebrow>
-              <Text style={{ fontSize: 10, color: t.accent, fontFamily: MONO }}>
-                {recipe.match?.uses || 0}/{recipe.match?.total || 0} en casa
+    <View style={{ borderRadius: 20, overflow: 'hidden', ...SHADOW.md }}>
+      <Pressable
+        onPress={onPress}
+        android_ripple={{ color: t.border }}
+        style={({ pressed }) => ({ opacity: Platform.OS === 'ios' && pressed ? 0.8 : 1 })}>
+        <Card padded={false} style={{ flexDirection: 'row', overflow: 'hidden', position: 'relative' }}>
+          {isAI && (
+            <View style={{
+              position: 'absolute', top: 10, right: 10, zIndex: 10,
+              backgroundColor: t.accent, paddingHorizontal: 10, paddingVertical: 5,
+              borderRadius: 999,
+            }}>
+              <Text allowFontScaling={false} style={{ fontSize: 9, color: '#fff', fontFamily: MONO, fontWeight: '600' }}>
+                ✨ IA
               </Text>
             </View>
-            <Text style={{ fontSize: 18, color: t.fg, marginTop: 4, lineHeight: 22 }}>{recipe.title}</Text>
+          )}
+          <FoodPlaceholder hue={recipe.img?.hue || 18} height={120} style={{ width: 120 }} />
+          <View style={{ flex: 1, padding: 14, justifyContent: 'space-between' }}>
+            <View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Eyebrow>{recipe.tag}</Eyebrow>
+                <Text allowFontScaling={false} style={{ fontSize: 10, color: t.accent, fontFamily: MONO }}>
+                  {recipe.match?.uses || 0}/{recipe.match?.total || 0} en casa
+                </Text>
+              </View>
+              <Text allowFontScaling={false} style={{ fontSize: 18, color: t.fg, marginTop: 4, lineHeight: 22 }}>{recipe.title}</Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+              <Text allowFontScaling={false} style={{ fontSize: 11, color: t.muted, fontFamily: MONO }}>{recipe.time}min</Text>
+              <Text allowFontScaling={false} style={{ fontSize: 11, color: t.muted, fontFamily: MONO }}>· {recipe.kcal}kcal</Text>
+              <Text allowFontScaling={false} style={{ fontSize: 11, color: t.muted, fontFamily: MONO }}>· {recipe.p}g prot</Text>
+            </View>
           </View>
-          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-            <Text style={{ fontSize: 11, color: t.muted, fontFamily: MONO }}>{recipe.time}min</Text>
-            <Text style={{ fontSize: 11, color: t.muted, fontFamily: MONO }}>· {recipe.kcal}kcal</Text>
-            <Text style={{ fontSize: 11, color: t.muted, fontFamily: MONO }}>· {recipe.p}g prot</Text>
-          </View>
-        </View>
-      </Card>
-    </TouchableOpacity>
+        </Card>
+      </Pressable>
+    </View>
   );
 }

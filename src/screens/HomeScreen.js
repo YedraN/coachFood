@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Modal, useWindowDimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Modal, useWindowDimensions, Pressable, Platform } from 'react-native';
 import Svg, { Path, Circle, Text as SvgText } from 'react-native-svg';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -49,11 +49,15 @@ export default function HomeScreen({ navigation }) {
         </Text>
 
         {/* Scan CTA */}
-        <View style={{ marginHorizontal: 22, marginTop: 22 }}>
-          <TouchableOpacity onPress={() => navigation.navigate('Scan')} activeOpacity={0.85} style={{
-            backgroundColor: t.fg, borderRadius: 22, padding: 20,
-            flexDirection: 'row', alignItems: 'center', gap: 16,
-          }}>
+        <View style={{ marginHorizontal: 22, marginTop: 22, borderRadius: 22, overflow: 'hidden' }}>
+          <Pressable
+            onPress={() => navigation.navigate('Scan')}
+            android_ripple={{ color: 'rgba(255,255,255,0.15)' }}
+            style={({ pressed }) => ({
+              backgroundColor: t.fg, borderRadius: 22, padding: 20,
+              flexDirection: 'row', alignItems: 'center', gap: 16,
+              opacity: Platform.OS === 'ios' && pressed ? 0.85 : 1,
+            })}>
             <View style={{
               width: 52, height: 52, borderRadius: 14,
               backgroundColor: t.accent, alignItems: 'center', justifyContent: 'center',
@@ -61,13 +65,13 @@ export default function HomeScreen({ navigation }) {
               <Icon name="scan" size={24} color="#fff" strokeWidth={2} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: t.surface2, opacity: 0.8 }}>
+              <Text allowFontScaling={false} style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: t.surface2, opacity: 0.8 }}>
                 Empieza por aquí
               </Text>
-              <Text style={{ fontSize: 22, color: t.bg === '#121214' ? '#FFFFFF' : '#FFFFFF', marginTop: 4 }}>Escanea tu ticket</Text>
+              <Text allowFontScaling={false} style={{ fontSize: 22, color: '#FFFFFF', marginTop: 4 }}>Escanea tu ticket</Text>
             </View>
             <Icon name="chevron" size={20} color={t.surface2} />
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {/* Today's rings */}
@@ -159,20 +163,24 @@ export default function HomeScreen({ navigation }) {
             <SectionHeader title="Recetas generadas" action="Ver todas" onAction={() => navigation.navigate('Recipes')} />
             <View style={{ gap: 12, marginTop: 14 }}>
               {latestRecipes.map(r => (
-                <TouchableOpacity key={r.id} onPress={() => navigation.navigate('RecipeDetail', { id: r.id })}
-                  activeOpacity={0.8}>
-                  <Card padded={false} style={{ flexDirection: 'row', alignItems: 'center', padding: 14, gap: 14 }}>
-                    <FoodPlaceholder hue={r.img?.hue || 18} height={64} style={{ width: 64, borderRadius: 12 }} />
-                    <View style={{ flex: 1 }}>
-                      <Eyebrow>{r.tag || 'Receta'}</Eyebrow>
-                      <Text style={{ fontSize: 17, color: t.fg, marginTop: 3 }} numberOfLines={1}>{r.title}</Text>
-                      <Text style={{ fontSize: 11, color: t.muted, marginTop: 4, fontFamily: MONO }}>
-                        {r.kcal} kcal {r.time ? `· ${r.time} min` : ''}
-                      </Text>
-                    </View>
-                    <Icon name="chevron" size={16} color={t.muted} />
-                  </Card>
-                </TouchableOpacity>
+                <View key={r.id} style={{ borderRadius: 20, overflow: 'hidden' }}>
+                  <Pressable
+                    onPress={() => navigation.navigate('RecipeDetail', { id: r.id })}
+                    android_ripple={{ color: t.border }}
+                    style={({ pressed }) => ({ opacity: Platform.OS === 'ios' && pressed ? 0.8 : 1 })}>
+                    <Card padded={false} style={{ flexDirection: 'row', alignItems: 'center', padding: 14, gap: 14 }}>
+                      <FoodPlaceholder hue={r.img?.hue || 18} height={64} style={{ width: 64, borderRadius: 12 }} />
+                      <View style={{ flex: 1 }}>
+                        <Eyebrow>{r.tag || 'Receta'}</Eyebrow>
+                        <Text allowFontScaling={false} style={{ fontSize: 17, color: t.fg, marginTop: 3 }} numberOfLines={1}>{r.title}</Text>
+                        <Text allowFontScaling={false} style={{ fontSize: 11, color: t.muted, marginTop: 4, fontFamily: MONO }}>
+                          {r.kcal} kcal {r.time ? `· ${r.time} min` : ''}
+                        </Text>
+                      </View>
+                      <Icon name="chevron" size={16} color={t.muted} />
+                    </Card>
+                  </Pressable>
+                </View>
               ))}
             </View>
           </View>
