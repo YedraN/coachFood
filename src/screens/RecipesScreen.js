@@ -73,7 +73,7 @@ export default function RecipesScreen({ navigation }) {
             Tus <Text style={{ color: t.accent, fontStyle: 'italic' }}>recetas</Text>
           </H1>
           <Text style={{ color: t.muted, fontSize: 14, lineHeight: 22, marginTop: 10 }}>
-            {aiRecipes.length} recetas generadas con IA a partir de tu despensa.
+            {aiRecipes.length} recetas personalizadas según tu despensa.
           </Text>
         </View>
 
@@ -131,7 +131,7 @@ export default function RecipesScreen({ navigation }) {
             }}>
               <Icon name="sparkle" size={16} color={t.accent} />
               <Text style={{ flex: 1, fontSize: 12, color: t.accentInk }}>
-                {aiRecipes.length} recetas generadas con IA basadas en tu despensa
+                {aiRecipes.length} recetas personalizadas según tu despensa
               </Text>
               {aiRecipes.length > 0 && (
                 <TouchableOpacity onPress={deleteAiRecipes} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>

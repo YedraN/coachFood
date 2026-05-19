@@ -392,8 +392,8 @@ export function AppProvider({ children }) {
     if (profile) setUser(mapProfile(profile));
   };
 
-  // ── AI Recipes ───────────────────────────────────────────────
-  const AI_FREE_LIMIT = 3;
+  // ── Recipes ───────────────────────────────────────────────────
+  const AI_FREE_LIMIT = 30;
 
   const aiGenerationsThisMonth = () => {
     const now = new Date();

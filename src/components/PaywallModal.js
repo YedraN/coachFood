@@ -6,7 +6,7 @@ import { Icon } from './ui';
 import { MONO } from '../constants/fonts';
 import { createCheckoutSession } from '../services/stripe';
 
-const FREE_LIMIT = 3;
+const FREE_LIMIT = 30;
 
 const BENEFITS = [
   { icon: 'sparkle', title: 'Recetas con IA ilimitadas',   desc: 'Genera recetas personalizadas según tu despensa sin límite mensual' },

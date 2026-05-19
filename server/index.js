@@ -1,5 +1,4 @@
 import express from 'express';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import ws from 'ws';
@@ -7,10 +6,11 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import { generateWorkoutPlan as localWorkoutGen } from './workoutGenerator.js';
+import { generateRecipesLocally } from './recipeGenerator.js';
 
 dotenv.config();
 
-const REQUIRED_ENV = ['GEMINI_API_KEY', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'SUPABASE_URL', 'SUPABASE_ANON_KEY'];
+const REQUIRED_ENV = ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'SUPABASE_URL', 'SUPABASE_ANON_KEY'];
 const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
 if (missing.length) {
   console.error('Missing required env vars:', missing.join(', '));
@@ -25,7 +25,6 @@ process.on('uncaughtException', (err) => { console.error('Uncaught Exception:', 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const supabaseAdmin = process.env['SUPABASE_SERVICE_ROLE_KEY']
   ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { realtime: { transport: ws } })
@@ -37,7 +36,6 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
 
 app.use(cors({ origin: ALLOWED_ORIGINS }));
 
-const aiLimiter = rateLimit({ windowMs: 60_000, max: 10, standardHeaders: true, legacyHeaders: false });
 const checkoutLimiter = rateLimit({ windowMs: 60_000, max: 5, standardHeaders: true, legacyHeaders: false });
 
 async function requireAuth(req, res, next) {
@@ -153,8 +151,8 @@ app.post('/api/create-checkout-session', checkoutLimiter, requireAuth, async (re
   }
 });
 
-// ── AI recipe generation ─────────────────────────────────────────────────────
-app.post('/api/generate-recipes', aiLimiter, requireAuth, async (req, res) => {
+// ── Recipe generation (local, no AI needed) ─────────────────────
+app.post('/api/generate-recipes', requireAuth, async (req, res) => {
   try {
     const { pantry, user } = req.body;
 
@@ -162,81 +160,10 @@ app.post('/api/generate-recipes', aiLimiter, requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Se necesita usuario y despensa con ingredientes' });
     }
 
-    if (pantry.length > 50) {
-      return res.status(400).json({ error: 'Máximo 50 ingredientes por petición' });
-    }
-
-    const ingredientsList = pantry
-      .map((item) => `${item.name} (${item.qty}, ${item.kcal}kcal, ${item.protein}g prot)`)
-      .join('\n');
-
-    const prompt = `Eres un nutricionista experto. Basándote en los ingredientes disponibles y los objetivos macronutricionales del usuario, genera exactamente 3 recetas personalizadas y equilibradas.
-
-INGREDIENTES DISPONIBLES:
-${ingredientsList}
-
-OBJETIVOS DEL USUARIO:
-- Calorías objetivo: ${user.kcalTarget} kcal/día
-- Proteína objetivo: ${user.proteinTarget}g/día
-- Objetivo: ${user.goal === 'lose' ? 'Perder peso' : user.goal === 'gain' ? 'Ganar músculo' : 'Mantener peso'}
-
-Responde SOLO con un JSON válido (sin markdown, sin explicaciones) con este formato exacto:
-{
-  "recipes": [
-    {
-      "title": "nombre de la receta",
-      "subtitle": "tipo · porciones",
-      "time": 20,
-      "kcal": 420,
-      "p": 35,
-      "c": 42,
-      "f": 12,
-      "tag": "Desayuno|Comida|Cena",
-      "why": "una frase corta explicando por qué es buena para el usuario",
-      "ingredients": [
-        {"name": "ingrediente", "qty": "100g", "have": true}
-      ],
-      "steps": ["paso 1", "paso 2"]
-    }
-  ]
-}
-
-REGLAS: Usa SOLO ingredientes de la lista. Genera exactamente 3 recetas diferentes.`;
-
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    if (!text) {
-      return res.status(500).json({ error: 'Respuesta inesperada de la API' });
-    }
-
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      return res.status(500).json({ error: 'No se encontró JSON válido en la respuesta' });
-    }
-
-    const data = JSON.parse(jsonMatch[0]);
-    const recipes = (data.recipes || []).map((r, i) => ({
-      id: `ai-recipe-${Date.now()}-${i}`,
-      title: r.title,
-      subtitle: r.subtitle || 'Receta IA',
-      time: r.time || 20,
-      kcal: r.kcal || 400,
-      p: r.p || 20,
-      c: r.c || 40,
-      f: r.f || 15,
-      tag: r.tag || 'Comida',
-      match: { uses: pantry.length, total: pantry.length },
-      img: { hue: Math.floor(Math.random() * 360), sat: 20 },
-      why: r.why || 'Receta personalizada generada con IA',
-      ingredients: r.ingredients || [],
-      steps: r.steps || ['Preparar', 'Cocinar', 'Servir'],
-      isAI: true,
-    }));
-
-    res.json({ recipes });
+    const result = generateRecipesLocally({ pantry, user });
+    res.json(result);
   } catch (error) {
-    console.error('Error generando recetas con IA:', error);
+    console.error('Error generando recetas:', error);
     res.status(500).json({ error: `Error al generar recetas: ${error.message}` });
   }
 });
